@@ -99,20 +99,23 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
           console.log({ file });
           core.FS.unlink(ofilename);
 
+
+
+          //https://ja.javascript.info/blob　より
           //blob
-          const blob = new Blob([file.buffer], { type: 'video/mp4' });
-          const blobsrc = URL.createObjectURL(blob);
-          DebugPrint(blobsrc);
+          let link = document.createElement('a');
+          link.download = video_name;
 
-          //ダウンロード
-          const a = document.createElement('a');
-          a.href = blobsrc;
-          a.download = video_name;
+          let blob = new Blob([file.buffer], { type: 'video/mp4' });
 
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          let reader = new FileReader();
+          reader.readAsDataURL(blob); // blob を base64 へ変換し onload を呼び出します
+
+          reader.onload = function () {
+            link.href = reader.result; // data url
+            link.click();
+          };
+
 
           documentWriteText("保存完了");
 

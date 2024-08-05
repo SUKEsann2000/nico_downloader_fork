@@ -4,11 +4,23 @@ let video_link_smid = "-1"; //-1はロードしてない
 let downloading = 0;        //0はDLしてない、1はダウンロード最中
 
 const VideoData = {
-    Video_title: 'VideoTitle',
-    Video_title_Element: 'HeaderContainer-topAreaLeft',
+    Video_title: 'fs_xl fw_bold',
+    Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
     Video_DLlink: {
-        p: 'DLlink',
-        a: 'DLlink_a'
+        p: 'Dlink',
+        div_class: 'd_flex justify_flex-start',
+        a: 'DLlink_a',
+        li: 'DLlink_li'
+    },
+    SystemMessageContainer: 'text_monotone.L80',
+    PlayerSettingQuery: '[aria-label="プレーヤー設定"]',
+    PlayerSettingClass: 'h_[calc(100vh_-_{sizes.commonHeader.inViewHeight}_-_{sizes.webHeader.height}_-_{spacing.x12})] max-h_[480px] rounded_m bg_layer.surfaceHighEm d_flex flex_column overflow_hidden shadow_base',
+    SystemMessageClass: 'cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none [&_>_svg]:w_auto [&_>_svg]:h_x3 h_x3 [&_svg]:d_none',
+    SystemMessageQuery: '[class^="cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none"]',
+    DLButton: {
+        a: "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);'",
+        b: '"\'><b>',
+        c: '</b>'
     }
 
 }
@@ -39,21 +51,29 @@ async function VideoDown() {
 
         //リンクをとりあえず作成
         VideoTitleElement_FirstMake();
-
+        documentWriteText('処理開始');
         DebugPrint("DL start");
 
         //videoが読み込めてなかったら出る
-        if (document.querySelector("#MainVideoPlayer > video").getAttribute('src') == null) {
+        if (document.querySelector("video").getAttribute('src') == null) {
             VideoTitleElement_Write('MainVideoPlayerが読み込めません');
             return false;
+        }
+
+
+        //ボタンを押したらシステムメッセージを強制的に読み込む
+        if (document.getElementById(VideoData.Video_DLlink.li)) {
+            //押ささっていたときの処理
+            console.log('押下')
+            SystemMessageAutoOpen();
+
         }
 
         //一時的に変える
         VideoTitleElement_ERRORcheck(video_name);
 
-
         //システムメッセージを読み込めてなかったら出る
-        if (document.getElementsByClassName('SystemMessageContainer-info').length == 0) {
+        if (document.getElementsByClassName(VideoData.SystemMessageContainer).length == 0) {
             return false;
         }
 
@@ -120,9 +140,31 @@ async function onclickDL(video_sm, video_name) {
 
     return true;
 }
+const Escape = function (str) {
+    return str
+        .replace(/\'/g, "\\'")
+        .replace(/\"/g, '\\"')
+        .replace(/\//g, '\\/');
+};
+//この関数は使っていないがこの挙動がほしい
+async function SystemMessageAutoOpen() {
 
+    new Promise((resolve) => {
+        //プレーヤー設定を自動的に押す
+        document.querySelector(VideoData.PlayerSettingQuery).click();
+        resolve();
+    }).then(function () {
+        //システムメッセージを開く
+        document.querySelector(VideoData.SystemMessageQuery).click();
+    })
+}
 
-
+function SystemMessgeAutoOpen_Text() {
+    let text = ""
+    text += "new Promise(function(resolve) {document.querySelector(&#39;" + VideoData.PlayerSettingQuery + "&#39;).click();resolve();})";
+    text += ".then(function() {document.querySelector(&#39;" + VideoData.SystemMessageQuery + "&#39;).click();});";
+    return text;
+}
 
 
 let interval1st = false;
@@ -155,7 +197,11 @@ window.onload = function () {
 
 
 function documentWriteText(URItext) {
-    document.getElementById(VideoData.Video_DLlink.a).innerText = URItext;
+    document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + VideoData.DLButton.b + URItext + VideoData.DLButton.c;
+}
+
+function documentWriteHTML(text) {
+    document.getElementById(VideoData.Video_DLlink.a).innerHTML = text;
 }
 function documentWriteOnclick(onclick) {
     document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
@@ -240,7 +286,8 @@ function VideoTitleElement_FirstMake() {
     DebugPrint("DL link make");
 
     let p_link = document.createElement("p");
-    p_link.id = VideoData.Video_DLlink_p;
+    p_link.id = VideoData.Video_DLlink.p;
+    p_link.className = VideoData.Video_DLlink.div_class;
     let a_link = document.createElement("a");
     a_link.innerText = "処理中";
     a_link.id = VideoData.Video_DLlink.a;
@@ -253,16 +300,22 @@ function VideoTitleElement_FirstMake() {
 }
 
 function VideoTitleElement_ERROR(video_name, hlssavemode = '1') {
-    let add_error = "<p>" + video_name + "</p><p>をダウンロードするためにはシステムメッセージを開いてください";
+
+    let add_error = "";
+    let js_script = SystemMessgeAutoOpen_Text();
+    //    add_error += "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);' onclick=\'let lis=document.createElement(&quot;li&quot;);lis.id=&quot;DLlink_li&quot;;lis.style=&quot;display:none&quot;;document.getElementById(&quot;DLlink_a&quot;).appendChild(lis)\'><b>" + video_name + "を保存</b>";
+    add_error += VideoData.DLButton.a + " onclick=\'" + SystemMessgeAutoOpen_Text() + "\' " + VideoData.DLButton.b + video_name + "を保存" + VideoData.DLButton.c;
+
 
     if (hlssavemode == "0") {
         const optionURL = chrome.runtime.getURL('options.html');
-        add_error = "<p>◆◆◆◆nico downloaderの初期設定を行ってください◆◆◆◆</p><p><a href=\"" + optionURL + "\">設定画面を開く</a></p>";
+        add_error = VideoData.DLButton.a + " onclick=\'location.href=&quot;" + optionURL + "&quot;\' " + VideoData.DLButton.b + "◆nico downloaderの初期設定を行って下さい◆<a href=\"" + optionURL + "\"><br>設定画面を開く</a>" + VideoData.DLButton.c;
     } else if (hlssavemode == "1") {
         add_error += "</p>"
     } else if (hlssavemode == "2") {
         add_error += "[高速モード]</p>";
     }
+    add_error += "</button>";
     return add_error;
 
 }
@@ -285,13 +338,13 @@ function SystemMessageContainer_masterURLGet() {
     //メッセージより読み込み
     let rawMessage;
     let tempURL = '';
-    for (let i = 0; i < document.getElementsByClassName('SystemMessageContainer-info').length; i++) {
+    for (let i = 0; i < document.getElementsByClassName(VideoData.SystemMessageContainer).length; i++) {
         DebugPrint("masterURL" + i)
-        const message = document.getElementsByClassName('SystemMessageContainer-info')[i].innerText;
-        if (message.match(/(動画の読み込みを開始しました。).*/)) {
+        const message = document.getElementsByClassName(VideoData.SystemMessageContainer)[i].innerText;
+        if (message.match(/(動画の初期化処理が完了しました).*/)) {
             DebugPrint("URL発見");
             rawMessage = String(message)
-            tempURL = String(rawMessage.replace('動画の読み込みを開始しました。（', '').replace('）', ''));
+            tempURL = String(rawMessage.replace('動画の初期化処理が完了しました (', '').replace(')', ''));
             DebugPrint("masterURL:" + tempURL);
         }
     };
@@ -460,15 +513,6 @@ function makeTSURLs_dmcnicovideo(video_m3u8_body_json) {
     }
     return TSURLs;
 }
-/*
-function makeTSURLs_dmcnicovideo(video_m3u8_body_json) {
-    let TSURLs = [];
-    for (let i = 0; i < video_m3u8_body_json['EXTINF'].length; i++) {
-        TSURLs.push(video_m3u8_body_json['EXTINF'][i]['URI']);
-    }
-    return TSURLs;
-}
- */
 function makeTSFilenames(TSURLs) {
 
 
@@ -533,3 +577,4 @@ function playlistm3u8_addURL(url, urldir) {
 
     return String(urldir.match(/(https.).*(playlist.m3u8?.)/g)).replace('playlist.m3u8?', '') + url;
 }
+
