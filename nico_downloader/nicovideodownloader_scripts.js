@@ -58,7 +58,7 @@ async function VideoDown() {
         }
 
         //初期設定してなかったら止める
-        if( document.getElementById(VideoData.Video_DLlink.a).innerHTML.indexOf('◆◆◆◆nico downloaderの初期設定を行ってください◆◆◆◆')!=-1){
+        if (document.getElementById(VideoData.Video_DLlink.a).innerHTML.indexOf('◆◆◆◆nico downloaderの初期設定を行ってください◆◆◆◆') != -1) {
             return false;
         }
 
@@ -77,16 +77,6 @@ async function VideoDown() {
         if (downloading) return false;
 
 
-        //const domand_m3u8 = (await GetMovieApi(video_sm)).data.contentUrl;
-        //console.log(domand_m3u8);
-
-
-        //dmc.nicoの処理はこちら！
-        if (masterURL.indexOf('dmc.nico/hlsvod/ht2_nicovideo/') != -1) {
-            VideoTitleElement_Write(video_name + "を保存")
-            MovieDownload_dmcnico(masterURL, video_sm, video_name);
-            video_link_smid = video_sm;
-        }
         //delivery.domand.nicovideo.jpの処理はこちら！
         if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
             VideoTitleElement_Write(video_name + "を保存")
@@ -104,8 +94,6 @@ async function onclickDL(video_sm, video_name) {
     downloading = true;
     let domand_m3u8;
     try {
-        //domand_m3u8 = (await GetMovieApi(video_sm)).data.contentUrl;
-        //DebugPrint(domand_m3u8);
         throw new Error('domand api error')
 
     } catch (e) {
@@ -172,11 +160,6 @@ function documentWriteText(URItext) {
 function documentWriteOnclick(onclick) {
     document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
 }
-//async function DLstartOnclick(TSURLs, video_sm, video_name, fps) {
-//    documentWriteText("処理中……");
-//    await DownEncoder(TSURLs, video_sm, video_name, fps);
-//
-//}
 function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
     documentWriteText("処理中……");
     DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name);
@@ -354,99 +337,12 @@ async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name,) {
     documentWriteText(video_name + "をダウンロード");
     documentWriteOnclick(DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name));
 }
-async function GetMovieApi(video_sm) {
-    //https://nvapi.nicovideo.jp/v1/watch/smXXXXXX/access-rights/hls?actionTrackId=
-
-    const TrackID = genActionTrackID();
-    const URL = "https://nvapi.nicovideo.jp/v1/watch/" + video_sm + "/access-rights/hls?actionTrackId=" + TrackID;
-    const ret = await GetWatchthreadKey_and_Moviedata(video_sm, TrackID);
-    const threadKEY = ret[0];
-    const video = ret[1].replace('archive', 'video').replaceAll('_', '-');
-    const audio = ret[2].replace('archive', 'audio').replaceAll('_', '-');
-    DebugPrint('video : ' + video);
-    DebugPrint('audio : ' + audio);
-    const res = await (await fetch(URL, {
-        "headers": {
-            "accept": "*/*",
-            "accept-language": "ja-JP,ja;q=0.9",
-            "content-type": "application/json",
-            "sec-ch-ua": "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"121\", \"Chromium\";v=\"121\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "x-access-right-key": threadKEY,
-            "x-frontend-id": "3",
-            "x-request-with": "nicovideo"
-        },
-        "referrer": "https://www.nicovideo.jp/",
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "body": "{\"outputs\":[[\"" + video + "\",\"" + audio + "\"]]}",
-        "method": "POST",
-        "mode": "cors",
-        "credentials": "include"
-    })).json();
-
-
-    console.log(res)
-    return res;
-}
 function genActionTrackID() {
     //ニコニコにあったやつwatch.XXXXXXXXXXX.min.js
     for (var e = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ0123456789".split(""), t = "", n = 0; n < 10; n++)
         t += e[Math.floor(Math.random() * e.length)];
     return t + "_" + Date.now()
 }
-async function GetWatchthreadKey_and_Moviedata(smid, trackID) {
-    const URL = 'https://www.nicovideo.jp/api/watch/v3/' + smid + '?_clientOsType=android&_frontendId=3&_frontendVersion=0.1.0&actionTrackId=' + trackID + '&kips=harmful&isContinueWatching=true&i18nLanguage=ja-jp';
-    // dataExist  data.media.domand.accessRightKey
-
-
-
-
-    const dataJSON = await (await fetch(URL, {
-        "headers": {
-            "accept": "*/*",
-            "accept-language": "ja-JP,ja;q=0.9",
-            "sec-ch-ua": "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"",
-            "sec-ch-ua-mobile": "?1",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site"
-        },
-        "referrer": "https://www.nicovideo.jp/",
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "body": null,
-        "method": "GET",
-        "mode": "cors",
-        "credentials": "include"
-    })).json();
-
-    const key = dataJSON.data.media.domand.accessRightKey;
-
-    let video, audio
-    for (let i = 0; i < dataJSON.data.media.delivery.movie.videos.length; i++) {
-        //if (dataJSON.data.media.delivery.movie.videos[i].isAvailable == true) {
-        video = dataJSON.data.media.delivery.movie.videos[i].id;
-        break;
-        // }
-    }
-    for (let i = 0; i < dataJSON.data.media.delivery.movie.audios.length; i++) {
-        //if (dataJSON.data.media.delivery.movie.audios[i].isAvailable == true) {
-        audio = dataJSON.data.media.delivery.movie.audios[i].id;
-        break;
-        //}
-    }
-
-    //dataJSON.data.media.delivery.movie.audios[0].id;
-    DebugPrint('threadKey : ' + key);
-
-    const ret = [key, video, audio];
-    return ret;
-}
-
 
 function m3u8_Parse(dataText) {
     //""の間に,が来るとそこで止まるが仕方ないということにしておきます
