@@ -114,7 +114,7 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
           link.style.display = 'none';
 
-          link.click();
+          document.body.click();
 
           documentWriteText("まもなく保存完了");
 
