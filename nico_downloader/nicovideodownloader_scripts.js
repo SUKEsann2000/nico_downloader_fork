@@ -10,7 +10,8 @@ const VideoData = {
         p: 'Dlink',
         div_class: 'd_flex justify_flex-start',
         a: 'DLlink_a',
-        li: 'DLlink_li'
+        li: 'DLlink_li',
+        a2: 'downloadlink'
     },
     SystemMessageContainer: 'text_monotone.L80',
     PlayerSettingQuery: '[aria-label="プレーヤー設定"]',
@@ -18,7 +19,7 @@ const VideoData = {
     SystemMessageClass: 'cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none [&_>_svg]:w_auto [&_>_svg]:h_x3 h_x3 [&_svg]:d_none',
     SystemMessageQuery: '[class^="cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none"]',
     DLButton: {
-        a: "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);'",
+        a: "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);border-radius: var(--radii-m)'",
         b: '"\'><b>',
         c: '</b>'
     }
@@ -176,6 +177,7 @@ try {
 
         if (interval1st) {
             try {
+                downloadlink_click(); //ダウンロードリンクをクリック
                 VideoDown();
             } catch (e) {
                 console.log(e);
@@ -202,6 +204,10 @@ function documentWriteText(URItext) {
 
 function documentWriteHTML(text) {
     document.getElementById(VideoData.Video_DLlink.a).innerHTML = text;
+}
+
+function documentWriteDLHTML(text) {
+    document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + " onclick=\'\'" + VideoData.DLButton.b + URItext + VideoData.DLButton.c;
 }
 function documentWriteOnclick(onclick) {
     document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
@@ -266,6 +272,17 @@ function video_sm_Get(match_sm) {
         DebugPrint("setOption(\"video_pattern\") : " + setOption("video_pattern"))
     }
     return video_sm;
+}
+
+function downloadlink_click() {
+    if (document.getElementById(VideoData.Video_DLlink.a2) != null) {
+        //ダウンロードのタグがあればクリック
+        const link = document.getElementById(VideoData.Video_DLlink.a2);
+        link.click();
+        link.remove();
+        documentWriteText("保存完了");
+
+    }
 }
 
 function VideoTitleElement_Check(video_sm) {

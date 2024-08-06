@@ -34,6 +34,7 @@ const runFFmpeg = async (Core, video_sm, ofilename) => {
     resolve = r;
   });
   try {
+    documentWriteText("ファイルの結合中");
     ffmpeg(Core, ['-f', 'concat', '-i', video_sm + ".txt", "-c", "copy", ofilename]);
     //ffmpeg(Core, ['-f', 'concat', '-r', fps, '-i', video_sm + ".txt", '-r', fps, ofilename]);//可変FPSなのでfps入れるとおかしくなる
 
@@ -43,7 +44,7 @@ const runFFmpeg = async (Core, video_sm, ofilename) => {
 
     //ここをcopyでやらないと変換速度がx0.1とかになる
   } catch (err) {
-    DebugPrint(err);
+    DebugPrint("FFmpeg:" + err);
   };
   await waitEnd;
   DebugPrint("waitEnd");
@@ -62,7 +63,7 @@ const runFFmpeg_m3u8 = async (Core, m3u8name, ofilename) => {
 
     //ここをcopyでやらないと変換速度がx0.1とかになる
   } catch (err) {
-    DebugPrint(err);
+    DebugPrint("runFFmpeg:" + err);
   };
   await waitEnd;
   DebugPrint("waitEnd");
@@ -84,7 +85,6 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
 
   //https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts  //偉大なる@_naari_氏による協力に感謝いたします
-  let resolve = null;
   let file = null;
   const core = await createFFmpegCore({
     printErr: (e) => DebugPrint(`FFMPEG:${e}`),
@@ -93,35 +93,35 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
       if (e.startsWith("FFMPEG_END")) {
         DebugPrint("FFMPEG_END 変換終了");
         if (last_save_sm !== video_sm) {
-
+          last_save_sm = video_sm;
           const ofilename = video_sm + "." + format;
           file = core.FS.readFile(ofilename);
           console.log({ file });
           core.FS.unlink(ofilename);
 
-
-
-          //https://ja.javascript.info/blob　より
           //blob
-          let link = document.createElement('a');
+          const blob = new Blob([file.buffer], { type: 'video/mp4' });
+
+
+          //ダウンロード
+          const a = document.createElement('a');
+          a.id = VideoData.Video_DLlink.a2;
+          document.body.appendChild(a);
+
+          const link = document.getElementById(VideoData.Video_DLlink.a2);
+          link.href = URL.createObjectURL(blob);
           link.download = video_name;
 
-          let blob = new Blob([file.buffer], { type: 'video/mp4' });
+          link.style.display = 'none';
 
-          let reader = new FileReader();
-          reader.readAsDataURL(blob); // blob を base64 へ変換し onload を呼び出します
+          link.click();
 
-          reader.onload = function () {
-            link.href = reader.result; // data url
-            link.click();
-          };
+          documentWriteText("まもなく保存完了");
 
 
-          documentWriteText("保存完了");
 
-          last_save_sm = video_sm;
         } else {
-          documentWriteText("保存完了");
+          documentWriteText("まもなく保存完了");
         }
 
       }
@@ -157,7 +157,7 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
           documentWriteText(text_dl);
 
-          DebugPrint(core.FS.stat(filename));
+          DebugPrint("180: " + core.FS.stat(filename));
           resolve(filename);
         });
 
