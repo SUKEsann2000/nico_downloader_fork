@@ -1,4 +1,3 @@
-
 //残したい変数
 let video_link_smid = "-1"; //-1はロードしてない
 let downloading = 0;        //0はDLしてない、1はダウンロード最中
@@ -6,6 +5,8 @@ let downloading = 0;        //0はDLしてない、1はダウンロード最中
 const VideoData = {
     Video_title: 'fs_xl fw_bold',
     Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
+    //Video_title_Element: 'd_flex w_[268px] gap_base items_center',
+    Video_title_Element_addTag: 'style="width: auto;"',
     Video_DLlink: {
         p: 'Dlink',
         div_class: 'd_flex justify_flex-start',
@@ -108,6 +109,7 @@ async function VideoDown() {
     return true;
 };
 
+//domand 
 async function onclickDL(video_sm, video_name) {
 
 
@@ -141,12 +143,6 @@ async function onclickDL(video_sm, video_name) {
 
     return true;
 }
-const Escape = function (str) {
-    return str
-        .replace(/\'/g, "\\'")
-        .replace(/\"/g, '\\"')
-        .replace(/\//g, '\\/');
-};
 //この関数は使っていないがこの挙動がほしい
 async function SystemMessageAutoOpen() {
 
@@ -207,14 +203,18 @@ function documentWriteHTML(text) {
 }
 
 function documentWriteDLHTML(text) {
-    document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + " onclick=\'\'" + VideoData.DLButton.b + URItext + VideoData.DLButton.c;
+    document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + " onclick=\'\'" + VideoData.DLButton.b + text + VideoData.DLButton.c;
 }
 function documentWriteOnclick(onclick) {
     document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
 }
 function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
     documentWriteText("処理中……");
-    DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name);
+
+    //video_nameから拡張子のみ抽出
+    const format = video_name.match(/\.[a-zA-Z0-9]+/).toString().replace('.', '');
+
+    DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format);
 
 }
 
@@ -319,8 +319,6 @@ function VideoTitleElement_FirstMake() {
 function VideoTitleElement_ERROR(video_name, hlssavemode = '1') {
 
     let add_error = "";
-    let js_script = SystemMessgeAutoOpen_Text();
-    //    add_error += "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);' onclick=\'let lis=document.createElement(&quot;li&quot;);lis.id=&quot;DLlink_li&quot;;lis.style=&quot;display:none&quot;;document.getElementById(&quot;DLlink_a&quot;).appendChild(lis)\'><b>" + video_name + "を保存</b>";
     add_error += VideoData.DLButton.a + " onclick=\'" + SystemMessgeAutoOpen_Text() + "\' " + VideoData.DLButton.b + video_name + "を保存" + VideoData.DLButton.c;
 
 
@@ -372,7 +370,7 @@ function SystemMessageContainer_masterURLGet() {
 
     return masterURL;
 }
-async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name,) {
+async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name) {
     //ダウンロード中をセット
     downloading = true;
     const Firstm3u8_body = await TextDownload_withCookie(Firstm3u8URL);
@@ -523,13 +521,6 @@ function makeTSURLs(audio_m3u8_body_json, video_m3u8_body_json) {
     }
     return TSURLs;
 }
-function makeTSURLs_dmcnicovideo(video_m3u8_body_json) {
-    let TSURLs = [];
-    for (let i = 0; i < video_m3u8_body_json['EXTINF'].length; i++) {
-        TSURLs.push(video_m3u8_body_json['EXTINF'][i]['URI']);
-    }
-    return TSURLs;
-}
 function makeTSFilenames(TSURLs) {
 
 
@@ -543,43 +534,6 @@ function makeTSFilenames(TSURLs) {
 }
 
 
-async function MovieDownload_dmcnico(masterURL, video_sm, video_name) {
-
-    //ダウンロード中フラグ立てる
-    downloading = true;
-
-    const Firstm3u8_body = await TextDownload_withCookie(masterURL);
-    DebugPrint(Firstm3u8_body);
-    const Firstm3u8_body_json = m3u8_Parse(Firstm3u8_body);
-
-
-    const video_m3u8_URL = masterm3u8_addURL(Firstm3u8_body_json["EXT-X-STREAM-INF"][0]['URI'], masterURL);
-    const video_m3u8_body = await TextDownload_withCookie(video_m3u8_URL);
-    const video_m3u8_body_json = m3u8_Parse(video_m3u8_body);
-
-
-    let TSURLs = makeTSURLs_dmcnicovideo(video_m3u8_body_json);
-    for (let i = 0; i < TSURLs.length; i++) {
-        TSURLs[i] = playlistm3u8_addURL(TSURLs[i], video_m3u8_URL);
-    }
-
-
-    let TSFilenames = makeTSFilenames(TSURLs)
-
-    let replace_video = video_m3u8_body.replace(/[?][\w=\-&_.~]+/g, '').replace('1/ts/', '');
-    let replace_Firstm3u8 = Firstm3u8_body.replace(/[?][\w=\-&_.~]+/g, '').replace('1/ts/', '');;
-    let m3u8s = [replace_video, replace_Firstm3u8,
-        makeFilename(video_m3u8_URL).replace('1/ts/', ''), makeFilename(masterURL)];
-
-
-
-    DebugPrint(String(TSURLs))
-    documentWriteText(video_name + "をダウンロード");
-    documentWriteOnclick(DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name));
-
-
-
-}
 function replaceURL(url) {
     let temp = url.replace(/https:\/\/[\w\.\/-]+[\/]{1}/g, '');
     temp = temp.replace(/[?][\w=\-&_~]+/g, '');

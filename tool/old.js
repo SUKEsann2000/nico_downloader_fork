@@ -211,5 +211,49 @@ function MovieDownload_dmcnico(masterURL, video_sm, video_name) {
     }
 }
 
+async function MovieDownload_dmcnico(masterURL, video_sm, video_name) {
 
+    //ダウンロード中フラグ立てる
+    downloading = true;
+
+    const Firstm3u8_body = await TextDownload_withCookie(masterURL);
+    DebugPrint(Firstm3u8_body);
+    const Firstm3u8_body_json = m3u8_Parse(Firstm3u8_body);
+
+
+    const video_m3u8_URL = masterm3u8_addURL(Firstm3u8_body_json["EXT-X-STREAM-INF"][0]['URI'], masterURL);
+    const video_m3u8_body = await TextDownload_withCookie(video_m3u8_URL);
+    const video_m3u8_body_json = m3u8_Parse(video_m3u8_body);
+
+
+    let TSURLs = makeTSURLs_dmcnicovideo(video_m3u8_body_json);
+    for (let i = 0; i < TSURLs.length; i++) {
+        TSURLs[i] = playlistm3u8_addURL(TSURLs[i], video_m3u8_URL);
+    }
+
+
+    let TSFilenames = makeTSFilenames(TSURLs)
+
+    let replace_video = video_m3u8_body.replace(/[?][\w=\-&_.~]+/g, '').replace('1/ts/', '');
+    let replace_Firstm3u8 = Firstm3u8_body.replace(/[?][\w=\-&_.~]+/g, '').replace('1/ts/', '');;
+    let m3u8s = [replace_video, replace_Firstm3u8,
+        makeFilename(video_m3u8_URL).replace('1/ts/', ''), makeFilename(masterURL)];
+
+
+
+    DebugPrint(String(TSURLs))
+    documentWriteText(video_name + "をダウンロード");
+    documentWriteOnclick(DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name));
+
+
+
+}
+
+function makeTSURLs_dmcnicovideo(video_m3u8_body_json) {
+    let TSURLs = [];
+    for (let i = 0; i < video_m3u8_body_json['EXTINF'].length; i++) {
+        TSURLs.push(video_m3u8_body_json['EXTINF'][i]['URI']);
+    }
+    return TSURLs;
+}
 */

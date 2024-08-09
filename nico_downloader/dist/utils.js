@@ -73,6 +73,21 @@ const runFFmpeg_m3u8 = async (Core, m3u8name, ofilename) => {
 const b64ToUint8Array = (str) => (Uint8Array.from(atob(str), c => c.charCodeAt(0)));
 
 
+function FiletypeToMimetype(filetype) {
+  switch (filetype) {
+    case "mp4":
+      return "video/mp4";
+    case "wav":
+      return "audio/wav";
+    case "mp3":
+      return "audio/mpeg";
+    case "webm":
+      return "video/webm";
+    default:
+      return "video/mp4";
+  }
+}
+
 //ここから追記
 async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format = "mp4") {
 
@@ -100,7 +115,11 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
           core.FS.unlink(ofilename);
 
           //blob
-          const blob = new Blob([file.buffer], { type: 'video/mp4' });
+          const blob = new Blob(
+            [file.buffer],
+            {
+              type: FiletypeToMimetype(format),
+            });
 
 
           //ダウンロード
@@ -192,7 +211,7 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
 
     //await Transcode(core, video_sm);
-    Transcode(core, video_sm, m3u8name, 'mp4');
+    Transcode(core, video_sm, m3u8name, format);
   }
   )
 
