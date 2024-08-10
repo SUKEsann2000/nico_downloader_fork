@@ -1,5 +1,13 @@
 //ここは使わなくなった古い関数の置き場
 /*
+function masterm3u8_addURL(url, urldir) {
+
+    return String(urldir.match(/(https.).*(master.m3u8?.)/g)).replace('master.m3u8?', '') + url;
+}
+function playlistm3u8_addURL(url, urldir) {
+
+    return String(urldir.match(/(https.).*(playlist.m3u8?.)/g)).replace('playlist.m3u8?', '') + url;
+}
 function MovieDownload_dmcnico(masterURL, video_sm, video_name) {
 
     //ダウンロード中フラグ立てる

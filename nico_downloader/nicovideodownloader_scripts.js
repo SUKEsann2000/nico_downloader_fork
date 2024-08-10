@@ -1,3 +1,5 @@
+
+
 //残したい変数
 let video_link_smid = "-1"; //-1はロードしてない
 let downloading = 0;        //0はDLしてない、1はダウンロード最中
@@ -6,7 +8,6 @@ const VideoData = {
     Video_title: 'fs_xl fw_bold',
     Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
     //Video_title_Element: 'd_flex w_[268px] gap_base items_center',
-    Video_title_Element_addTag: 'style="width: auto;"',
     Video_DLlink: {
         p: 'Dlink',
         div_class: 'd_flex justify_flex-start',
@@ -211,9 +212,8 @@ function documentWriteOnclick(onclick) {
 function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
     documentWriteText("処理中……");
 
-    //video_nameから拡張子のみ抽出
-    const format = video_name.match(/\.[a-zA-Z0-9]+/).toString().replace('.', '');
-
+    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+    const format = video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');   
     DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format);
 
 }
@@ -493,59 +493,3 @@ function m3u8_Parse(dataText) {
 
 
 }
-
-function makeFilename(URL) {
-
-    let ret = '';
-    DebugPrint('URL:' + URL);
-    if (URL.startsWith('https')) {
-        ret = URL.match(/\/[\w-.]+\?/).toString().replace('/', '').replace('?', '');
-    } else {
-        ret = URL.match(/[\w-.]+\?/).toString().replace('/', '').replace('?', '');
-    }
-    DebugPrint('makeFilename: ' + ret + ' ' + URL);
-    return ret;
-}
-function makeTSURLs(audio_m3u8_body_json, video_m3u8_body_json) {
-    let TSURLs = [];
-    //URIキーをすべてTSURLsにいれる
-    TSURLs.push(audio_m3u8_body_json['EXT-X-MAP'][0]['URI']);
-    TSURLs.push(audio_m3u8_body_json['EXT-X-KEY'][0]['URI']);
-    for (let i = 0; i < audio_m3u8_body_json['EXTINF'].length; i++) {
-        TSURLs.push(audio_m3u8_body_json['EXTINF'][i]['URI']);
-    }
-    TSURLs.push(video_m3u8_body_json['EXT-X-MAP'][0]['URI']);
-    TSURLs.push(video_m3u8_body_json['EXT-X-KEY'][0]['URI']);
-    for (let i = 0; i < video_m3u8_body_json['EXTINF'].length; i++) {
-        TSURLs.push(video_m3u8_body_json['EXTINF'][i]['URI']);
-    }
-    return TSURLs;
-}
-function makeTSFilenames(TSURLs) {
-
-
-    let TSFilenames = [];
-    //TSURLsのファイル名をすべて出す
-    for (let i = 0; i < TSURLs.length; i++) {
-        const fname = makeFilename(TSURLs[i]);
-        TSFilenames.push(fname);
-    }
-    return TSFilenames;
-}
-
-
-function replaceURL(url) {
-    let temp = url.replace(/https:\/\/[\w\.\/-]+[\/]{1}/g, '');
-    temp = temp.replace(/[?][\w=\-&_~]+/g, '');
-
-    return temp;
-}
-function masterm3u8_addURL(url, urldir) {
-
-    return String(urldir.match(/(https.).*(master.m3u8?.)/g)).replace('master.m3u8?', '') + url;
-}
-function playlistm3u8_addURL(url, urldir) {
-
-    return String(urldir.match(/(https.).*(playlist.m3u8?.)/g)).replace('playlist.m3u8?', '') + url;
-}
-

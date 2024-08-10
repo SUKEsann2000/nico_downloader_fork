@@ -7,7 +7,7 @@ window.onload = function () {
     Options_onload();
     SoftVersionWrite();
 
-    //10ミリ秒ごとの処理
+    //10ミリ秒ごとの処理を設定
     const intervalId = setInterval(() => {
         if (save_flag == true) {
             Options_view_select("video_downloading");

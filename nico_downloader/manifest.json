@@ -20,7 +20,8 @@
                 "options.html",
                 "dist/ffmpeg-core2.js",
                 "dist/ffmpeg-core.wasm",
-                "dist/utils.js"
+                "dist/utils.js",
+                "func/url.js"
             ]
         }
     ],
@@ -33,7 +34,8 @@
                 "nicovideodownloader_scripts.js",
                 "options.js",
                 "dist/ffmpeg-core2.js",
-                "dist/utils.js"
+                "dist/utils.js",
+                "func/url.js"
             ]
         },
         {
