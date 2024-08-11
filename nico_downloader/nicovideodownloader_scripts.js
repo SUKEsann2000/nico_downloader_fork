@@ -213,7 +213,7 @@ function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
     documentWriteText("処理中……");
 
     //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
-    const format = video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');   
+    const format = video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
     DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format);
 
 }
