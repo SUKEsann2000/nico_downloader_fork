@@ -9,26 +9,106 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>設定 － nico downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+
+
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 32px;
+            color: #007bff;
+
+        }
+
+        form {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+        }
+
+        label {
+            font-weight: bold;
+
+        }
+
+        select {
+            width: 350px;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+
+        }
+
+        #saved {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #version {
+            margin-top: 20px;
+        }
+
+        .stylish-div {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 10px solid #ff0000;
+            border-radius: 20px;
+            border: 2px solid red;
+            box-shadow: 0 0 10px red;
+        }
+    </style>
 </head>
 
 <body>
-    <div>
-        <p>
-        <h1>設定 － nico downloader</h1>
-        </p>
+
+    <h1 class="container">
+        設定 － nico downloader
+    </h1>
+    <div class="stylish-div">
+        <label><b>初期設定の仕方</b></label>
+        <p>保存方法の簡易説明</p>
+        <p>1.下記「初期設定モード」をOFFにし、ページの一番下にある「保存」ボタンを押下します。</p>
+        <p>2.動画ページを開き、動画の右下あたりにある保存ボタンを押します。</p>
+        <p>3.しばらくダウンロードと変換処理に時間がかかります。</p>
+        <p>4.動画が保存されます。既定のフォルダに自動保存または保存ダイアログが表示されます。(Chromeの保存設定によります)</p>
+
     </div>
+
+
     <form id="form">
-        <div style="padding: 10px; margin-bottom: 10px; border: 10px solid #ff0000; border-radius: 20px;">
-            <label><b>初期設定の仕方</b></label>
-            <p>
-            <p></p>
-            <p></p>
-            <p>保存方法の簡易説明</p>
-            <p>1.下記「初期設定モード」をOFFにし、ページの一番下にある「保存」ボタンを押下します。</p>
-            <p>2.動画ページを開き、動画の右下あたりにある保存ボタンを押します。</p>
-            <p>3.しばらくダウンロードと変換処理に時間がかかります。</p>
-            <p>4.動画が保存されます。既定のフォルダに自動保存または保存ダイアログが表示されます。(Chromeの保存設定によります)</p>
-        </div>
 
         <div>
             <label><b>初期設定モード</b></label>
@@ -57,64 +137,74 @@
                 </select></p>
         </div>
         <br><br><br>
-            <details>
-                <summary>プロフェッショナル設定（ここの設定についてはサポートしません）</summary>
-                    <div>
-                        <label><b>URL判別パターン</b></label>
-                    <p>－　特定のパターンでのみ反応するように変更できます。</p>
-                    <p>－　Javascriptの正規表現で記載してください。</p>
-                    <p id="video_pattern_now_setting">現在の設定：</p>
-                    <p>https://www.nicovideo.jp/watch/<input type="text" name="video_pattern" id="video_pattern"
-                            value="sm[0-9]{1,}"></p>
-                        </div>
-        
+        <details>
+            <summary>プロフェッショナル設定（ここの設定についてはサポートしません）</summary>
+            <div>
+                <label><b>URL判別パターン</b></label>
+                <p>－　特定のパターンでのみ反応するように変更できます。</p>
+                <p>－　Javascriptの正規表現で記載してください。</p>
+                <p id="video_pattern_now_setting">現在の設定：</p>
+                <p>https://www.nicovideo.jp/watch/<input type="text" name="video_pattern" id="video_pattern"
+                        value="sm[0-9]{1,}"></p>
+            </div>
 
-                    <div style="display: none;">
-                                <label><b>自動保存設定</b></label>
-                                <p>－　リンクの作成ができた時点で自動で保存処理が走るようになります。</p>
-                                <p>－　鬱陶しい時はOFFにしましょう</p>
-                                <p id="video_autosave_now_setting">現在の設定：</p>
-                                <p>
-                                    <select name="video_autosave" id="video_autosave" value="0">
-                                        <option value="0" selected>OFF</option>
-                                        <option value="1">ON</option>
-                                    </select>
-                                </p>
-                            </div>
-                            <br><br><br>
-                    
-                            <div>
-                                <label><b>デバッグモード</b></label>
-                                <p>－　デバッグモードです。</p>
-                                <p id="debug_now_setting">現在の設定：</p>
-                                <p>
-                                    <select name="debug" id="debug" value="0">
-                                        <option value="0" selected>OFF</option>
-                                        <option value="1">ON</option>
-                                    </select>
-                                </p>
-                            </div>
-                            <br><br><br>
-            </details>
+
+            <div style="display: none;">
+                <label><b>自動保存設定</b></label>
+                <p>－　リンクの作成ができた時点で自動で保存処理が走るようになります。</p>
+                <p>－　鬱陶しい時はOFFにしましょう</p>
+                <p id="video_autosave_now_setting">現在の設定：</p>
+                <p>
+                    <select name="video_autosave" id="video_autosave" value="0">
+                        <option value="0" selected>OFF</option>
+                        <option value="1">ON</option>
+                    </select>
+                </p>
+            </div>
+            <br><br><br>
+
+            <div>
+                <label><b>デバッグモード</b></label>
+                <p>－　デバッグモードです。</p>
+                <p id="debug_now_setting">現在の設定：</p>
+                <p>
+                    <select name="debug" id="debug" value="0">
+                        <option value="0" selected>OFF</option>
+                        <option value="1">ON</option>
+                    </select>
+                </p>
+            </div>
+            <br><br><br>
+        </details>
         <br><br><br>
 
 
 
     </form>
-    <br><br><br>
-    <div>
+    <div style="text-align:center">
         <p><button id="default_val">デフォルト設定</button>　<button id="save_button">保存</button></p>
         <p id="saved"></p>
     </div>
 
-    <div><a href="https://note.com/masteralice3104/n/n4586ff69c799">nico downloaderの現状、不具合、リリースノートなどはこちらから</a></div>
-    <div>不具合・バグ報告・ソフトウェアについての要望などは<a href="https://twitter.com/masteralice3104">Twitter</a>から</div>
-    <div>
-        <b>
-            <font size="4"><p id="version"></p></font>
-        </b>
-    </div>
 
+
+    <div style="text-align: center;">
+        <div>
+            <a href="https://note.com/masteralice3104/n/n4586ff69c799" style="color: #007bff; font-size: 18px;">nico
+                downloaderの現状、不具合、リリースノートなどはこちらから</a>
+        </div>
+        <div style="text-align: center;">
+            不具合・バグ報告・ソフトウェアについての要望などは<a href="https://twitter.com/masteralice3104"
+                style="color: #007bff; font-size: 18px;">Twitter</a>から
+        </div>
+        <div style="text-align: center;">
+            <b>
+                <font size="4" color="#007bff">
+                    <p id="version">vX.X.X.X</p>
+                </font>
+            </b>
+        </div>
+    </div>
 </body>
 <script src="options.js"></script>
 <script src="options_menu.js"></script>
