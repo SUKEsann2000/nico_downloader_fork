@@ -86,6 +86,13 @@ function SoftVersionWrite() {
     document.getElementById("version").innerText = `バージョン：` + ver;
 }
 
+function SystemMessageOpenButton() {
+    document.getElementById('system_message_open').style = 'display: block';
+}
+
+//システムメッセージを開きダウンロードする方法
+document.getElementById("system_message_open_button").onclick = SystemMessageOpenButton;
+
 //保存ボタンクリック時
 document.getElementById("save_button").onclick = Options_Save;
 document.getElementById("default_val").onclick = Default_click;
