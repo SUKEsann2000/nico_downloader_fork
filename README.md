@@ -51,5 +51,5 @@ nico downloader：ニコニコ用のシンプルなChrome拡張
 |3. コメントをダウンロードできるようにしてほしい|＜対応検討中＞|
 |4. ダウンロードしようとしたら1KBになりました。バグらささっていると思います。|十中八九変換に失敗しています。<br>原因の一例<br>・PCのメモリが足りない(要件を読んで下さい)<br>・回線の問題でダウンロードに失敗した(要件を読んで下さい)<br>・動画が暗号化されている(おことわりを読んで下さい)<br>・動画が長すぎる(特に3時間以上)|
 |5. バグを発見した|@masteralice3104へご報告下さい|
-|6. Plz, I've Question by ENG or other...|I can understand "Japanese". However, I have confirmed that DeepL translation and Google Translate do not correctly translate the dialect I speak. Therefore, there is a high possibility that my intention will not be conveyed correctly.|
+|6. Plz, I've Question by ENG or other...| I understand "Japanese". But I can't understand enough ENG. ------ I'd confirmed that DeepL translation and Google Translate don't correctly translate the dialect I talk. These sentence is also likely to be incorrect. Therefore, if you and I use a translator, our intentions would may be conveyed incorrectly. So I can't respond.|
 
