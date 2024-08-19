@@ -2,7 +2,7 @@
 
 //残したい変数
 let video_link_smid = "-1"; //-1はロードしてない
-let downloading = 0;        //0はDLしてない、1はダウンロード最中
+let downloading = false;        //0はDLしてない、1はダウンロード最中
 
 const VideoData = {
     Video_title: 'fs_xl fw_bold',
@@ -93,18 +93,21 @@ async function VideoDown() {
 
 
         //DebugPrint("masterURL:" + masterURL);
+
+        // systemMessageContainerからmasterURLを取得
         const masterURL = SystemMessageContainer_masterURLGet();
-        if (masterURL == null) return false;
+        if (masterURL == null) return false;    // masterURLが取得できなかった場合は終了
 
         DebugPrint("masterURL:" + masterURL);
-        if (downloading) return false;
+
+        if (downloading) return false;//ダウンロード中は終了
 
 
         //delivery.domand.nicovideo.jpの処理はこちら！
         if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
-            VideoTitleElement_Write(video_name + "を保存")
-            onclickDL(video_sm, video_name);
-            video_link_smid = video_sm;
+            VideoTitleElement_Write(video_name + "を保存") // ボタンを変更
+            onclickDL(video_sm, video_name);                // ダウンロード開始
+            video_link_smid = video_sm;                    // ダウンロードしたsm番号を記録
         }
     }
     return true;
@@ -123,6 +126,7 @@ async function onclickDL(video_sm, video_name) {
     } catch (e) {
 
         try {
+
             if (SystemMessageContainer_masterURLGet() != false) {
                 domand_m3u8 = SystemMessageContainer_masterURLGet();
             } else {
