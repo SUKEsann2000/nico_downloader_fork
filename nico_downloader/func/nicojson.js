@@ -1,4 +1,4 @@
-// Description: ニコニコ動画のjsonを取得する関数をまとめたクラスです。
+// Description: ニコニコ動画のjsonを取得し中身のデータを抽出する関数をまとめたクラスです。
 //使い方
 /*
 const nicovideo = new Nicovideo();
@@ -11,8 +11,11 @@ nicovideo.SetAllFromVideoSm('sm9').then(() => {
 });
 */
 
+// 必要な変数
+const NicoVideoWatchURL = 'https://www.nicovideo.jp/watch/';
 
-export class Nicovideo {
+
+class NicovideoClass {
     constructor() {
         this.video_sm = ''; // 動画id
         this.json = {}; // json
@@ -20,21 +23,25 @@ export class Nicovideo {
         this.comment_count = 0; // コメント数
         this.mylist_count = 0; // マイリスト数
         this.like_count = 0; // いいね数
-        this.title = ''; // タイトル
+        this.video_title = ''; // タイトル
+
+        //後で自ら設定しないといけない変数
+        this.video_name = "";// 動画の保存名
     }
 
     //jsonをダウンロード後jsonをセットし、その後各変数をセット
     async SetAllFromVideoSm(video_sm) {
         this.video_sm = video_sm;
-        this.DownloadJson(video_sm).then(json => {
-            this.SetJson(json);
-            this.SetAll();
-        });
+        return this.DownloadJson(video_sm)
+            .then(json => {
+                this.SetJson(json);
+                this.SetAll();
+            });
     }
 
     //jsonをダウンロード
     async DownloadJson(video_sm = this.video_sm) {
-        const url = 'https://www.nicovideo.jp/watch/' + video_sm + '?responseType=json';
+        const url = NicoVideoWatchURL + video_sm + '?responseType=json';
         return fetch(url).then(response => response.json());
     }
     //jsonをセット
@@ -47,7 +54,7 @@ export class Nicovideo {
         this.comment_count = this.JsonToCommentCount(json);
         this.mylist_count = this.JsonToMylistCount(json);
         this.like_count = this.JsonToLikeCount(json);
-        this.title = this.JsonToTitle(json);
+        this.video_title = this.JsonToTitle(json);
     }
 
     //jsonより再生数を取得
@@ -74,4 +81,20 @@ export class Nicovideo {
     JsonToId(json = this.json) {
         return json.data.response.video.id; // id
     }
+
+    //変数の中身が適正なデータかチェックする関数
+    //video_smが空文字ならfalseを返す
+    Checkvideo_sm() {
+        if (this.video_sm == '') return false;
+        true;
+    }
+    Checkvideo_title() {
+        if (this.video_title == '') return false;
+        true;
+    }
+    Checkvideo_name() {
+        if (this.video_name == '') return false;
+        true;
+    }
+
 }

@@ -21,7 +21,9 @@
                 "dist/ffmpeg-core2.js",
                 "dist/ffmpeg-core.wasm",
                 "dist/utils.js",
-                "func/url.js"
+                "func/url.js",
+                "func/nicojson.js",
+                "func/ndl.js"
             ]
         }
     ],
@@ -35,7 +37,9 @@
                 "options.js",
                 "dist/ffmpeg-core2.js",
                 "dist/utils.js",
-                "func/url.js"
+                "func/url.js",
+                "func/nicojson.js",
+                "func/ndl.js"
             ]
         },
         {

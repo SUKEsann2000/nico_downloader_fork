@@ -1,5 +1,3 @@
-
-
 //残したい変数
 let video_link_smid = "-1"; //-1はロードしてない
 let downloading = false;        //0はDLしてない、1はダウンロード最中
@@ -32,21 +30,30 @@ const VideoData = {
 
 async function VideoDown() {
 
-    //動画タイトルの定義
-    const video_title = document.getElementsByClassName(VideoData.Video_title)[0].innerText;
 
-    //動画sm番号の定義
-    const match_sm = match_sm_Get();
-    const video_sm = video_sm_Get(match_sm);
-    if (video_sm == '') {
-        return false;
-    }
+    //NicoDownloaderクラスの初期化
+    const NicoDownloader = new NicoDownloaderClass;
+
+    //NicovideoClassクラスの初期化
+    const Nicovideo = new NicovideoClass;
+
+    //sm番号の取得
+    Nicovideo.video_sm = video_sm_Get(NicoDownloader.MatchingSMIDArray);//これはそのうちnicojson.jsの関数に置き換える
+    //タイトルの取得
+    Nicovideo.video_title = document.getElementsByClassName(VideoData.Video_title)[0].innerText;//これはそのうちnicojson.jsの関数に置き換える
+
+    //エラー処理
+    if (Nicovideo.Checkvideo_sm() == false) return false;//sm番号が取得できなかったら終了
+    if (Nicovideo.Checkvideo_title() == false) return false;//タイトルが取得できなかったら終了
+
 
     //デフォルト動画ファイル名の定義
-    const video_name = VideoNameMake(video_sm, video_title);
+    //const video_name = VideoNameMake(Nicovideo.video_sm, video_title);
+    Nicovideo.video_name = NicoDownloader.VideoDownloadNameMake(Nicovideo.video_sm, Nicovideo.video_title);
+    if (Nicovideo.Checkvideo_name() == false) return false;//動画名が取得できなかったら終了
 
     //すでに作ったリンクがあるかどうか判別し、あれば削除
-    VideoTitleElement_Check(video_sm);
+    VideoTitleElement_Check(Nicovideo.video_sm);
 
 
     //ダウンロードリンクの表示
@@ -73,7 +80,7 @@ async function VideoDown() {
         }
 
         //一時的に変える
-        VideoTitleElement_ERRORcheck(video_name);
+        VideoTitleElement_ERRORcheck(Nicovideo.video_name);
 
         //システムメッセージを読み込めてなかったら出る
         if (document.getElementsByClassName(VideoData.SystemMessageContainer).length == 0) {
@@ -105,9 +112,9 @@ async function VideoDown() {
 
         //delivery.domand.nicovideo.jpの処理はこちら！
         if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
-            VideoTitleElement_Write(video_name + "を保存") // ボタンを変更
-            onclickDL(video_sm, video_name);                // ダウンロード開始
-            video_link_smid = video_sm;                    // ダウンロードしたsm番号を記録
+            VideoTitleElement_Write(Nicovideo.video_name + "を保存") // ボタンを変更
+            onclickDL(Nicovideo.video_sm, Nicovideo.video_name);                // ダウンロード開始
+            video_link_smid = Nicovideo.video_sm;                    // ダウンロードしたsm番号を記録
         }
     }
     return true;
@@ -222,48 +229,7 @@ function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
 
 }
 
-function VideoNameMake(video_sm, video_title, kakuchoushi = ".mp4") {
-    let video_name = "";
-    const video_name_value = setOption("video_downloading");
-
-    //video_name
-    if (video_name_value !== "1" &&
-        video_name_value !== "2" &&
-        video_name_value !== "3") {
-
-        video_name = video_name + video_sm;
-    } else if (video_name_value === "1") {
-        video_name = video_name + video_title;
-    } else if (video_name_value === "2") {
-        video_name = video_name + video_sm;
-        video_name = video_name + "_";
-        video_name = video_name + video_title;
-    } else if (video_name_value === "3") {
-        video_name = video_name + video_title;
-        video_name = video_name + "_";
-        video_name = video_name + video_sm;
-    }
-    video_name = video_name + kakuchoushi;
-    return video_name;
-}
-
-
-function match_sm_Get() {
-    let match_sm = '0';
-    try {
-        DebugPrint("match_sm初期値 : " + match_sm)
-        match_sm = setOption("video_pattern");
-        DebugPrint("match_sm読込 : " + match_sm)
-        if (match_sm == "0") {
-            match_sm = "sm[0-9]{1,}";
-        }
-        DebugPrint("match_smｴﾗｰ処理 : " + match_sm)
-    } catch (error) {
-        match_sm = "sm[0-9]{1,}";
-        DebugPrint("ndl:er " + error)
-    }
-    return match_sm;
-}
+//将来的にここはnicojson.jsのNivideoClass.video_smを使う
 function video_sm_Get(match_sm) {
     let video_sm = '';
     if (location.href.match(match_sm)) {
