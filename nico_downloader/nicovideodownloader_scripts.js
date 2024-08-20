@@ -2,93 +2,71 @@
 let video_link_smid = "-1"; //-1はロードしてない
 let downloading = false;        //0はDLしてない、1はダウンロード最中
 
-const VideoData = {
-    Video_title: 'fs_xl fw_bold',
-    Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
-    //Video_title_Element: 'd_flex w_[268px] gap_base items_center',
-    Video_DLlink: {
-        p: 'Dlink',
-        div_class: 'd_flex justify_flex-start',
-        a: 'DLlink_a',
-        li: 'DLlink_li',
-        a2: 'downloadlink'
-    },
-    SystemMessageContainer: 'text_monotone.L80',
-    PlayerSettingQuery: '[aria-label="設定"]',
-    PlayerSettingClass: 'h_[calc(100vh_-_{sizes.commonHeader.inViewHeight}_-_{sizes.webHeader.height}_-_{spacing.x12})] max-h_[480px] rounded_m bg_layer.surfaceHighEm d_flex flex_column overflow_hidden shadow_base',
-    SystemMessageClass: 'cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none [&_>_svg]:w_auto [&_>_svg]:h_x3 h_x3 [&_svg]:d_none',
-    SystemMessageQuery: '[class^="cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none"]',
-    DLButton: {
-        a: "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);border-radius: var(--radii-m)'",
-        b: '"\'><b>',
-        c: '</b>'
-    }
-
-}
 
 //ダウンロード関数
 
 async function VideoDown() {
 
+    //必要なクラスの初期化
+    const NicoDownloader = new NicoDownloaderClass;//NicoDownloaderクラスの初期化
+    const Nicovideo = new NicovideoClass;//NicovideoClassクラスの初期化
+    NicoDownloader.VideoLoadedSet(video_link_smid);//すでに読み込んだかどうかの判定
 
-    //NicoDownloaderクラスの初期化
-    const NicoDownloader = new NicoDownloaderClass;
-
-    //NicovideoClassクラスの初期化
-    const Nicovideo = new NicovideoClass;
-
-    //sm番号の取得
-    Nicovideo.video_sm = video_sm_Get(NicoDownloader.MatchingSMIDArray);//これはそのうちnicojson.jsの関数に置き換える
-    //タイトルの取得
-    Nicovideo.video_title = document.getElementsByClassName(VideoData.Video_title)[0].innerText;//これはそのうちnicojson.jsの関数に置き換える
-
-    //エラー処理
-    if (Nicovideo.Checkvideo_sm() == false) return false;//sm番号が取得できなかったら終了
-    if (Nicovideo.Checkvideo_title() == false) return false;//タイトルが取得できなかったら終了
+    await new Promise((resolve, reject) => {//たぶんSetAllFromVideoSmとかに置き換える
+        //sm番号の取得
+        Nicovideo.video_sm = video_sm_Get(NicoDownloader.MatchingSMIDArray);//これはそのうちnicojson.jsの関数に置き換える
+        //タイトルの取得
+        Nicovideo.video_title = document.getElementsByClassName(VideoData.Video_title)[0].innerText;//これはそのうちnicojson.jsの関数に置き換える
 
 
-    //デフォルト動画ファイル名の定義
-    //const video_name = VideoNameMake(Nicovideo.video_sm, video_title);
-    Nicovideo.video_name = NicoDownloader.VideoDownloadNameMake(Nicovideo.video_sm, Nicovideo.video_title);
-    if (Nicovideo.Checkvideo_name() == false) return false;//動画名が取得できなかったら終了
+        // resolve
+        resolve();
+    }).then(() => {
 
-    //すでに作ったリンクがあるかどうか判別し、あれば削除
-    VideoTitleElement_Check(Nicovideo.video_sm);
+        //sm番号かタイトルが取得できなかったら終了
+        if (Nicovideo.video_sm == '' || Nicovideo.video_title == '') return false;
+
+
+        //デフォルト動画ファイル名の定義
+        Nicovideo.video_name = NicoDownloader.VideoDownloadNameMake(Nicovideo.video_sm, Nicovideo.video_title);
+
+        //すでに作ったリンクがあるかどうか判別し、あれば削除
+        NicoDownloader.VideoTitleElementCheck(Nicovideo.video_sm);
+    });
 
 
     //ダウンロードリンクの表示
-    if (video_link_smid === "-1") {
+    if (!NicoDownloader.VideoLoadedCheck(Nicovideo.video_sm)) {//ここがtrueになるとすでに読み込み済み
 
         //リンクをとりあえず作成
-        VideoTitleElement_FirstMake();
-        documentWriteText('処理開始');
+        NicoDownloader.VideoTitleElementFirstMake();
+
+        NicoDownloader.ButtonTextWrite('処理開始');//ボタンの文字を変更
         DebugPrint("DL start");
 
         //videoが読み込めてなかったら出る
-        if (document.querySelector("video").getAttribute('src') == null) {
-            VideoTitleElement_Write('MainVideoPlayerが読み込めません');
+        if (!NicoDownloader.CheckMainVideoPlayer()) {
+            NicoDownloader.ButtonTextWrite('MainVideoPlayerが読み込めません');//ボタンの文字を変更
             return false;
         }
 
 
         //ボタンを押したらシステムメッセージを強制的に読み込む
         if (document.getElementById(VideoData.Video_DLlink.li)) {
-            //押ささっていたときの処理
-            console.log('押下')
-            SystemMessageAutoOpen();
-
+            //特にここには意味はない
         }
-
         //一時的に変える
-        VideoTitleElement_ERRORcheck(Nicovideo.video_name);
+        //VideoTitleElement_ERRORcheck(Nicovideo.video_name);
+
+        // 保存ボタンを作成
+        NicoDownloader.SaveButtonMake(Nicovideo.video_name);
+
 
         //システムメッセージを読み込めてなかったら出る
-        if (document.getElementsByClassName(VideoData.SystemMessageContainer).length == 0) {
-            return false;
-        }
+        if (NicoDownloader.CheckSystemMessageContainer() == false) return false;
 
         //初期設定してなかったら止める
-        if (document.getElementById(VideoData.Video_DLlink.a).innerHTML.indexOf('◆◆◆◆nico downloaderの初期設定を行ってください◆◆◆◆') != -1) {
+        if (!NicoDownloader.NicoDownloaderFirstSettingCheck()) {
             return false;
         }
 
@@ -155,18 +133,6 @@ async function onclickDL(video_sm, video_name) {
 
     return true;
 }
-//この関数は使っていないがこの挙動がほしい
-async function SystemMessageAutoOpen() {
-
-    new Promise((resolve) => {
-        //プレーヤー設定を自動的に押す
-        document.querySelector(VideoData.PlayerSettingQuery).click();
-        resolve();
-    }).then(function () {
-        //システムメッセージを開く
-        document.querySelector(VideoData.SystemMessageQuery).click();
-    })
-}
 
 function SystemMessgeAutoOpen_Text() {
     let text = ""
@@ -229,7 +195,7 @@ function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
 
 }
 
-//将来的にここはnicojson.jsのNivideoClass.video_smを使う
+//将来的にここはnicojson.jsのNicovideoClass.video_smを使う
 function video_sm_Get(match_sm) {
     let video_sm = '';
     if (location.href.match(match_sm)) {
@@ -268,23 +234,6 @@ function VideoTitleElement_Check(video_sm) {
     }
 }
 
-//リンクの作成をする
-function VideoTitleElement_FirstMake() {
-    DebugPrint("DL link make");
-
-    let p_link = document.createElement("p");
-    p_link.id = VideoData.Video_DLlink.p;
-    p_link.className = VideoData.Video_DLlink.div_class;
-    let a_link = document.createElement("a");
-    a_link.innerText = "処理中";
-    a_link.id = VideoData.Video_DLlink.a;
-
-    if (!document.getElementById(p_link.id)) {
-        document.getElementsByClassName(VideoData.Video_title_Element)[0].appendChild(p_link);
-        document.getElementsByClassName(VideoData.Video_title_Element)[0].querySelector("p").appendChild(a_link);
-    }
-
-}
 
 function VideoTitleElement_ERROR(video_name, hlssavemode = '1') {
 
@@ -314,7 +263,7 @@ function VideoTitleElement_ERRORcheck(video_name) {
     VideoTitleElement_Write(add_error);
 
 }
-function VideoTitleElement_Write(txt) {
+function VideoTitleElement_Write(txt) {//NicoDownloaderClass.ButtonTextWriteに置き換える
 
     document.getElementById(VideoData.Video_DLlink.a).innerHTML = txt;
 

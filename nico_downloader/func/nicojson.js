@@ -92,9 +92,5 @@ class NicovideoClass {
         if (this.video_title == '') return false;
         true;
     }
-    Checkvideo_name() {
-        if (this.video_name == '') return false;
-        true;
-    }
 
 }
