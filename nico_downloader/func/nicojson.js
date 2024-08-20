@@ -14,6 +14,9 @@ nicovideo.SetAllFromVideoSm('sm9').then(() => {
 // 必要な変数
 const NicoVideoWatchURL = 'https://www.nicovideo.jp/watch/';
 
+// 残さねばならない変数
+let Nicovideo______Ndl______DataLoadedSMID = '-1'; // データを取得した動画のsmid
+let Nicovideo______Ndl______DataLoadedJSON = {}; // JSONデータ   
 
 class NicovideoClass {
     constructor() {
@@ -32,10 +35,23 @@ class NicovideoClass {
     //jsonをダウンロード後jsonをセットし、その後各変数をセット
     async SetAllFromVideoSm(video_sm) {
         this.video_sm = video_sm;
+
+        if (video_sm == Nicovideo______Ndl______DataLoadedSMID) {
+            return new Promise((resolve, reject) => {
+                DebugPrint("NicovideoClass: SetAllFromVideoSm: JSONLoaded");
+                this.SetJson(Nicovideo______Ndl______DataLoadedJSON);
+                this.SetAll();
+                this.SetLoadedSMID();
+                resolve();
+            })
+        }
         return this.DownloadJson(video_sm)
             .then(json => {
+                DebugPrint("NicovideoClass: SetAllFromVideoSm: DownloadJSON");
+                DebugPrint(json);
                 this.SetJson(json);
                 this.SetAll();
+                this.SetLoadedSMID();
             });
     }
 
@@ -47,6 +63,12 @@ class NicovideoClass {
     //jsonをセット
     SetJson(json) {
         this.json = json;
+        Nicovideo______Ndl______DataLoadedJSON = json;
+    }
+
+    //読み込み済みをセット
+    SetLoadedSMID(video_sm = this.video_sm) {
+        Nicovideo______Ndl______DataLoadedSMID = video_sm;
     }
     //constructorの各変数をセット
     SetAll(json = this.json) {
@@ -55,6 +77,21 @@ class NicovideoClass {
         this.mylist_count = this.JsonToMylistCount(json);
         this.like_count = this.JsonToLikeCount(json);
         this.video_title = this.JsonToTitle(json);
+    }
+
+
+    VideoSmGet(match_sm) {
+        let video_sm = '';
+        if (location.href.match(match_sm)) {
+            video_sm = location.href.match(match_sm).toString();
+            DebugPrint("location.href.match match_sm true")
+            DebugPrint("match_sm : " + match_sm)
+        } else {
+            DebugPrint("location.href.match match_sm false")
+            DebugPrint("match_sm : " + match_sm)
+            DebugPrint("setOption(\"video_pattern\") : " + setOption("video_pattern"))
+        }
+        return video_sm;
     }
 
     //jsonより再生数を取得

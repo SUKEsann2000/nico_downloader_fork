@@ -51,7 +51,7 @@ function setOption(name) {
         }
 
     } catch (error) {
-        DebugPrint("ndl:" + error)
+        DebugPrint("SetOption:" + error)
         return 0;
     }
 }

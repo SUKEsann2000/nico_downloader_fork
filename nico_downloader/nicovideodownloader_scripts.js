@@ -1,30 +1,25 @@
-//残したい変数
-let video_link_smid = "-1"; //-1はロードしてない
-let downloading = false;        //0はDLしてない、1はダウンロード最中
 
 
 //ダウンロード関数
 
 async function VideoDown() {
 
+
     //必要なクラスの初期化
     const NicoDownloader = new NicoDownloaderClass;//NicoDownloaderクラスの初期化
     const Nicovideo = new NicovideoClass;//NicovideoClassクラスの初期化
-    NicoDownloader.VideoLoadedSet(video_link_smid);//すでに読み込んだかどうかの判定
 
-    await new Promise((resolve, reject) => {//たぶんSetAllFromVideoSmとかに置き換える
-        //sm番号の取得
-        Nicovideo.video_sm = video_sm_Get(NicoDownloader.MatchingSMIDArray);//これはそのうちnicojson.jsの関数に置き換える
-        //タイトルの取得
-        Nicovideo.video_title = document.getElementsByClassName(VideoData.Video_title)[0].innerText;//これはそのうちnicojson.jsの関数に置き換える
+    //Downloadingがtrueの場合は終了
+    if (NicoDownloader.VideoDownloadingCheck()) return false;
 
+    //現在のページのsm番号の取得しセット
+    Nicovideo.video_sm = Nicovideo.VideoSmGet(NicoDownloader.MatchingSMIDArray);
 
-        // resolve
-        resolve();
-    }).then(() => {
+    await Nicovideo.SetAllFromVideoSm(Nicovideo.video_sm);
 
+    new Promise((resolve, reject) => {
         //sm番号かタイトルが取得できなかったら終了
-        if (Nicovideo.video_sm == '' || Nicovideo.video_title == '') return false;
+        if (Nicovideo.video_sm == '' || Nicovideo.video_title == '') reject("video_sm or video_title is null");
 
 
         //デフォルト動画ファイル名の定義
@@ -32,68 +27,66 @@ async function VideoDown() {
 
         //すでに作ったリンクがあるかどうか判別し、あれば削除
         NicoDownloader.VideoTitleElementCheck(Nicovideo.video_sm);
+
+        //resolve
+        resolve();
+    }).catch((err) => {
+        DebugPrint("NDLGetData", err);
+        return false;
     });
 
 
     //ダウンロードリンクの表示
     if (!NicoDownloader.VideoLoadedCheck(Nicovideo.video_sm)) {//ここがtrueになるとすでに読み込み済み
 
-        //リンクをとりあえず作成
-        NicoDownloader.VideoTitleElementFirstMake();
 
-        NicoDownloader.ButtonTextWrite('処理開始');//ボタンの文字を変更
-        DebugPrint("DL start");
+        new Promise((resolve, reject) => {
 
-        //videoが読み込めてなかったら出る
-        if (!NicoDownloader.CheckMainVideoPlayer()) {
-            NicoDownloader.ButtonTextWrite('MainVideoPlayerが読み込めません');//ボタンの文字を変更
+            //ボタンをとりあえず作成
+            NicoDownloader.ButtonFirstMake();
+
+            NicoDownloader.ButtonTextWrite('処理開始');//ボタンの文字を変更
+
+            // 保存ボタンを作成
+            NicoDownloader.SaveButtonMake(Nicovideo.video_name);
+
+            //ダウンロード前のチェック処理
+            if (NicoDownloader.CheckBeforeDownload() == false) reject("CheckBeforeDownload ERROR");
+
+            if (NicoDownloader.VideoDownloadingCheck()) reject("Now Downloading");//ダウンロード中は終了
+
+            // resolve
+            resolve();
+        }).then(() => {
+
+            ////////////////////////////////////////////////////////////////
+            // ここから実行部分
+            ////////////////////////////////////////////////////////////////
+
+            // systemMessageContainerからmasterURLを取得
+            const masterURL = NicoDownloader.MasterURLGet();
+            if (masterURL == false) return false;    // masterURLが取得できなかった場合は終了
+
+            DebugPrint("masterURL:" + masterURL);
+
+            if (NicoDownloader.VideoDownloadingCheck()) return false;//ダウンロード中は終了
+
+
+            //delivery.domand.nicovideo.jpの処理はこちら！
+            if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
+                onclickDL(Nicovideo.video_sm, Nicovideo.video_name); // ダウンロード開始
+                NicoDownloader.VideoLoadedSMIDSet(Nicovideo.video_sm);// ダウンロードしたsm番号を記録
+                NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
+            }
+
+            // resolve
+            resolve();
+        }).catch((value) => {
+            DebugPrint("NDLDL");
+            DebugPrint(value);
             return false;
-        }
+        });
 
-
-        //ボタンを押したらシステムメッセージを強制的に読み込む
-        if (document.getElementById(VideoData.Video_DLlink.li)) {
-            //特にここには意味はない
-        }
-        //一時的に変える
-        //VideoTitleElement_ERRORcheck(Nicovideo.video_name);
-
-        // 保存ボタンを作成
-        NicoDownloader.SaveButtonMake(Nicovideo.video_name);
-
-
-        //システムメッセージを読み込めてなかったら出る
-        if (NicoDownloader.CheckSystemMessageContainer() == false) return false;
-
-        //初期設定してなかったら止める
-        if (!NicoDownloader.NicoDownloaderFirstSettingCheck()) {
-            return false;
-        }
-
-
-        ////////////////////////////////////////////////////////////////
-        // ここから実行部分
-        ////////////////////////////////////////////////////////////////
-
-
-
-        //DebugPrint("masterURL:" + masterURL);
-
-        // systemMessageContainerからmasterURLを取得
-        const masterURL = SystemMessageContainer_masterURLGet();
-        if (masterURL == null) return false;    // masterURLが取得できなかった場合は終了
-
-        DebugPrint("masterURL:" + masterURL);
-
-        if (downloading) return false;//ダウンロード中は終了
-
-
-        //delivery.domand.nicovideo.jpの処理はこちら！
-        if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
-            VideoTitleElement_Write(Nicovideo.video_name + "を保存") // ボタンを変更
-            onclickDL(Nicovideo.video_sm, Nicovideo.video_name);                // ダウンロード開始
-            video_link_smid = Nicovideo.video_sm;                    // ダウンロードしたsm番号を記録
-        }
     }
     return true;
 };
@@ -101,9 +94,6 @@ async function VideoDown() {
 //domand 
 async function onclickDL(video_sm, video_name) {
 
-
-    if (downloading) return false;
-    downloading = true;
     let domand_m3u8;
     try {
         throw new Error('domand api error')
@@ -128,7 +118,6 @@ async function onclickDL(video_sm, video_name) {
         VideoTitleElement_Write('保存失敗:コンソールを参照してください')
         return false;
     }
-    downloading = false;
 
 
     return true;
@@ -168,7 +157,7 @@ try {
 
 //ページ表示時発火処理
 window.onload = function () {
-    Option_setLoading("video_downloading");
+    Option_setLoading("video_downloading"); // デフォルト保存名の読み込み
 }
 
 
@@ -176,13 +165,7 @@ function documentWriteText(URItext) {
     document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + VideoData.DLButton.b + URItext + VideoData.DLButton.c;
 }
 
-function documentWriteHTML(text) {
-    document.getElementById(VideoData.Video_DLlink.a).innerHTML = text;
-}
 
-function documentWriteDLHTML(text) {
-    document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + " onclick=\'\'" + VideoData.DLButton.b + text + VideoData.DLButton.c;
-}
 function documentWriteOnclick(onclick) {
     document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
 }
@@ -221,48 +204,7 @@ function downloadlink_click() {
     }
 }
 
-function VideoTitleElement_Check(video_sm) {
-    //この関数はすでに作ったリンクがあるかどうかを判別する
-    if (video_link_smid !== video_sm && video_link_smid !== "-1") {
-        DebugPrint("video_link_smidリセット")
-        DebugPrint("video_link_smid : " + video_link_smid)
-        DebugPrint("video_sm : " + video_sm)
-        //video_link_smidが現在のものと同じじゃないならすでに読み込んだ形跡があるので一回消す
-        video_link_smid = "-1";
-        document.getElementById(VideoData.Video_DLlink.p).remove();
 
-    }
-}
-
-
-function VideoTitleElement_ERROR(video_name, hlssavemode = '1') {
-
-    let add_error = "";
-    add_error += VideoData.DLButton.a + " onclick=\'" + SystemMessgeAutoOpen_Text() + "\' " + VideoData.DLButton.b + video_name + "を保存" + VideoData.DLButton.c;
-
-
-    if (hlssavemode == "0") {
-        const optionURL = chrome.runtime.getURL('options.html');
-        add_error = VideoData.DLButton.a + " onclick=\'location.href=&quot;" + optionURL + "&quot;\' " + VideoData.DLButton.b + "◆nico downloaderの初期設定を行って下さい◆<a href=\"" + optionURL + "\"><br>設定画面を開く</a>" + VideoData.DLButton.c;
-    } else if (hlssavemode == "1") {
-        add_error += "</p>"
-    } else if (hlssavemode == "2") {
-        add_error += "[高速モード]</p>";
-    }
-    add_error += "</button>";
-    return add_error;
-
-}
-function VideoTitleElement_ERRORcheck(video_name) {
-    //hlsになっている場合
-    DebugPrint("hls mode");
-    const hlssavemode = setOption("video_hlssave");
-
-    //エラー文を用意する
-    const add_error = VideoTitleElement_ERROR(video_name, hlssavemode);
-    VideoTitleElement_Write(add_error);
-
-}
 function VideoTitleElement_Write(txt) {//NicoDownloaderClass.ButtonTextWriteに置き換える
 
     document.getElementById(VideoData.Video_DLlink.a).innerHTML = txt;
@@ -290,8 +232,7 @@ function SystemMessageContainer_masterURLGet() {
     return masterURL;
 }
 async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name) {
-    //ダウンロード中をセット
-    downloading = true;
+
     const Firstm3u8_body = await TextDownload_withCookie(Firstm3u8URL);
     DebugPrint(Firstm3u8_body);
 

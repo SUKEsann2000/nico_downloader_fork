@@ -57,6 +57,11 @@ const VideoData = {
 
 }
 
+//引き継ぎされる変数
+let NicovideoDownloader__LoadedVideoSMID = "-1"; // 読み込んだ動画のsmID
+let NicovideoDownloader__NowDownloading = false; // ダウンロード中かどうか true:ダウンロード中 false:ダウンロードしていない
+
+
 
 class NicoDownloaderClass {
 
@@ -79,11 +84,14 @@ class NicoDownloaderClass {
         this.VideoDownloadNameArraySetting();
         this.Savemode == "0"; // 保存モード
         this.SavemodeSetting(); // 保存モードの設定
-        this.optionURL = chrome.runtime.getURL('options.html');// オプションページのURL
+        this.LoadedVideoSMID = "-1"; // 読み込んだ動画のsmID
+        this.VideoLoadedSet();  // 読み込んだ動画のsmIDをセット
 
+        this.downloading = false; // ダウンロード中かどうか
+        this.VideoDownloadingFirstSetting(); // ダウンロード中かどうかの初期状態を設定
 
         //後で自ら設定しないといけない変数
-        this.LoadedVideoSMID = "-1"; // 読み込んだ動画のsmID
+        this.optionURL = '';// オプションページのURL
         this.LangSetting = "ja"; // 言語
 
     }
@@ -160,9 +168,36 @@ class NicoDownloaderClass {
     }
 
     //読み込み済みの動画をセットする
-    VideoLoadedSet(video_sm) {
-        this.LoadedVideoSMID = video_sm;
+    VideoLoadedSet() {
+        this.LoadedVideoSMID = NicovideoDownloader__LoadedVideoSMID;
         return;
+    }
+
+    // 動画をダウンロード中かどうかをセットする
+    VideoDownloadingSet() {
+        NicovideoDownloader__NowDownloading = true;
+        this.downloading = true;
+        return;
+    }
+
+    // 動画をダウンロード中かどうかの初期状態を設定する
+    VideoDownloadingFirstSetting() {
+        this.downloading = NicovideoDownloader__NowDownloading;
+        return;
+    }
+
+    // 動画をダウンロード中かどうかをリセットする
+    VideoDownloadingReset() {
+        NicovideoDownloader__NowDownloading = false;
+        this.downloading = false;
+        return;
+    }
+
+    // 動画をダウンロード中かどうかをチェックする
+    VideoDownloadingCheck() {
+        return this.downloading;
+        //true:ダウンロード中
+        //false:ダウンロードしていない
     }
 
     //この関数はすでに動画を読み込んだかどうかを判別する
@@ -173,10 +208,16 @@ class NicoDownloaderClass {
         return false;//読み込んでいない
     }
 
+    VideoLoadedSMIDSet(video_sm) {
+        this.LoadedVideoSMID = video_sm;
+        NicovideoDownloader__LoadedVideoSMID = this.LoadedVideoSMID;
+        return;
+    }
+
 
 
     //リンクの作成をする
-    VideoTitleElementFirstMake() {
+    ButtonFirstMake() {
 
         let p_link = document.createElement("p");
         p_link.id = VideoData.Video_DLlink.p;
@@ -235,6 +276,28 @@ class NicoDownloaderClass {
         return true;
     }
 
+
+    //ダウンロード前チェックを一括で行う
+    CheckBeforeDownload() {
+        //MainVideoPlayerが読み込めるかどうかを判別する
+        if (!this.CheckMainVideoPlayer()) {
+            this.ButtonTextWrite('MainVideoPlayerが読み込めません');//ボタンの文字を変更
+            return false;
+        }
+        //SystemMessageが読み込めるかどうかを判別する
+        if (this.CheckSystemMessageContainer() == false) return false;
+
+
+        //DLlinkを強制的に読み込む
+        if (document.getElementById(VideoData.Video_DLlink.li)) {
+            //ここには何も書かない
+        }
+
+        // 初期設定していなかったら止める
+        if (this.NicoDownloaderFirstSettingCheck() == false) return false;
+        return true;
+    }
+
     // Savemodeの読み込み
     SavemodeSetting() {
         this.Savemode = setOption("video_hlssave");
@@ -264,6 +327,9 @@ class NicoDownloaderClass {
     //保存ボタンの中身を作成
     SaveButtonInnerHTMLMake(video_name) {
         if (this.Savemode == "0") {
+            // optionページのURLを取得
+            this.optionURL = chrome.runtime.getURL('options.html');
+
             // 初期設定を促す
             return VideoData.DLButton.a + " onclick=\'location.href=&quot;" + this.optionURL + "&quot;\' " + VideoData.DLButton.b + this.LangText("要初期設定") + "<a href=\"" + this.optionURL + "\"><br>" + this.LangText("設定画面を開く") + "</a>" + VideoData.DLButton.c;
         }
@@ -284,6 +350,37 @@ class NicoDownloaderClass {
             return false;
         }
         return true;
+    }
+
+    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+    FormatSetting(video_name) {
+        return video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
+
+    }
+
+    //SystemMessageContainerからmasterURLを取得
+    MasterURLGet() {
+        //メッセージより読み込み
+        let rawMessage;
+        let tempURL = '';
+        for (let i = 0; i < document.getElementsByClassName(VideoData.SystemMessageContainer).length; i++) {
+            DebugPrint("masterURL" + i)
+            const message = document.getElementsByClassName(VideoData.SystemMessageContainer)[i].innerText;
+            if (message.match(/(動画の初期化処理が完了しました).*/)) {
+                DebugPrint("URL発見");
+                rawMessage = String(message)
+                tempURL = String(rawMessage.replace('動画の初期化処理が完了しました (', '').replace(')', ''));
+                DebugPrint("masterURL:" + tempURL);
+            }
+        };
+
+        //URLが取得できなかったらfalseを返す
+        if (tempURL == null) return false;
+        if (tempURL == '') return false;
+        const masterURL = tempURL;
+        if (masterURL == null) return false;
+
+        return masterURL;
     }
 
 
