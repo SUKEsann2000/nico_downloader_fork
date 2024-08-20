@@ -163,33 +163,36 @@ async function MovieDownload_domand(video_sm, video_name, NicoDownloader) {
 
     //Firstm3u8URLを取得
     const Firstm3u8URL = NicoDownloader.MasterURLGet();
-    NicoDownloader.SetM3u8("FirstURL", Firstm3u8URL);
-    NicoDownloader.SetM3u8("FirstBody", await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.FirstURL));
-    NicoDownloader.SetM3u8("FirstBody_json", NicoDownloader.Parsem3u8(NicoDownloader.M3u8.FirstBody));
 
+    //Firstm3u8URLの取得に失敗した場合は終了
+    if (Firstm3u8URL == false) return false;
 
-    const Firstm3u8_body_json = NicoDownloader.Parsem3u8(NicoDownloader.M3u8.FirstBody);
+    //Firstm3u8URLの取得に成功した場合
 
+    await NicoDownloader.URLToM3u8Set("First", Firstm3u8URL);//Firstm3u8URLをセット
 
+    //Firstm3u8URLからaudio_m3u8_URLとvideo_m3u8_URLを取得
+    if (NicoDownloader.M3u8ToAudioAndVideoUrlSet() == false) return false;
 
-    console.log(NicoDownloader.M3u8.FirstBody_json)
-    const audio_m3u8_URL = NicoDownloader.M3u8.FirstBody_json["EXT-X-MEDIA"][0]['URI'];
-    const video_m3u8_URL = NicoDownloader.M3u8.FirstBody_json["EXT-X-STREAM-INF"][0]['URI'];
+    //audio_m3u8_URLとvideo_m3u8_URLを取得できた場合
+    //audio_m3u8_URLとvideo_m3u8_URLを元にaudio_m3u8_bodyとvideo_m3u8_bodyを取得
+    await NicoDownloader.URLToM3u8Set("Audio", NicoDownloader.M3u8.AudioM3u8URL);
+    await NicoDownloader.URLToM3u8Set("Video", NicoDownloader.M3u8.VideoM3u8URL);
 
-    const audio_m3u8_body = await NicoDownloader.DownloadTextWithCookie(audio_m3u8_URL);
-    const video_m3u8_body = await NicoDownloader.DownloadTextWithCookie(video_m3u8_URL);
-    const audio_m3u8_body_json = NicoDownloader.Parsem3u8(audio_m3u8_body);
-    const video_m3u8_body_json = NicoDownloader.Parsem3u8(video_m3u8_body);
+    //const audio_m3u8_body = await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.AudioM3u8URL);
+    const audio_m3u8_body = NicoDownloader.M3u8.AudioBody;
+    const video_m3u8_body = NicoDownloader.M3u8.VideoBody;
+    //const video_m3u8_body = await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.VideoM3u8URL);
 
-    DebugPrint('audio:' + audio_m3u8_URL);
-    DebugPrint('video:' + video_m3u8_URL);
+    const audio_m3u8_body_json = NicoDownloader.M3u8.AudioBody_json;
+    const video_m3u8_body_json = NicoDownloader.M3u8.VideoBody_json;
 
     let replace_audio = replaceURL(audio_m3u8_body)
     let replace_video = replaceURL(video_m3u8_body)
     let replace_Firstm3u8 = replaceURL(NicoDownloader.M3u8.FirstBody)
 
     let m3u8s = [replace_audio, replace_video, replace_Firstm3u8,
-        makeFilename(audio_m3u8_URL), makeFilename(video_m3u8_URL), makeFilename(Firstm3u8URL)];
+        makeFilename(NicoDownloader.M3u8.AudioM3u8URL), makeFilename(NicoDownloader.M3u8.VideoM3u8URL), makeFilename(Firstm3u8URL)];
     let TSURLs = makeTSURLs(video_m3u8_body_json, audio_m3u8_body_json);
 
 

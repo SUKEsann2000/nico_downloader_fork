@@ -493,7 +493,38 @@ class NicoDownloaderClass {
         }
 
         return jsondata;
+    }
+
+    /**
+     * 
+     * @param {String} Key 
+     * @param {String} URL 
+     */
+    async URLToM3u8Set(Key, URL) {
+
+        //Firstm3u8URLの取得に成功した場合
+        this.SetM3u8(Key + "URL", URL);//Firstm3u8URLをセット
+        this.SetM3u8(Key + "Body", await this.DownloadTextWithCookie(this.M3u8[Key + "URL"]));//Firstm3u8のBodyをセット
+        this.SetM3u8(Key + "Body_json", this.Parsem3u8(this.M3u8[Key + "Body"]));//Firstm3u8のBodyをJSON形式に変換してセット
+    }
+
+    M3u8ToAudioAndVideoUrlSet() {
+
+        const audio_m3u8_URL = this.M3u8.FirstBody_json["EXT-X-MEDIA"][0]['URI'];
+        const video_m3u8_URL = this.M3u8.FirstBody_json["EXT-X-STREAM-INF"][0]['URI'];
+
+        if (audio_m3u8_URL == null || video_m3u8_URL == null) return false;
+
+        this.SetM3u8("AudioM3u8URL", audio_m3u8_URL);
+        this.SetM3u8("VideoM3u8URL", video_m3u8_URL);
+
+        return true;
+    }
 
 
+
+
+    M3u8ToM3u8Set() {
+        this.M3u8ToUrlSet()
     }
 }
