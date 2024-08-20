@@ -281,17 +281,6 @@ function sleep(waitMsec) {
   while (new Date() - startMsec < waitMsec);
 }
 
-
-async function TextDownload_withCookie(URL) {
-  return await fetch(URL, { credentials: 'include' })
-    .then((response) => {
-      if (response.status !== 200) {
-        DebugPrint("Error downloading :" + URL);
-        return -1;
-      }
-      return response.text();
-    });
-}
 async function ArrayDownload_withCookie(URL) {
   return await fetch(URL, { credentials: 'include' })
     .then((response) => {

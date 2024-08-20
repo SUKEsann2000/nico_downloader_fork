@@ -43,9 +43,11 @@ function makeFilename(URL) {
     return ret;
 }
 
+//
 function replaceURL(url) {
     let temp = url.replace(/https:\/\/[\w\.\/-]+[\/]{1}/g, '');
     temp = temp.replace(/[?][\w=\-&_~]+/g, '');
 
     return temp;
 }
+

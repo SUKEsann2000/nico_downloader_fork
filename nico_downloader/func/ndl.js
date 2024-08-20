@@ -74,6 +74,7 @@ class NicoDownloaderClass {
             "設定画面を開く": "設定画面を開く",
             "を保存": "を保存",
             "処理中": "処理中",
+            "保存完了": "保存完了"
         }
     }
 
@@ -93,6 +94,7 @@ class NicoDownloaderClass {
         //後で自ら設定しないといけない変数
         this.optionURL = '';// オプションページのURL
         this.LangSetting = "ja"; // 言語
+        this.M3u8 = {}; // m3u8の最初の内容
 
     }
     //設定ファイルを読み込む
@@ -304,7 +306,8 @@ class NicoDownloaderClass {
         return;
     }
 
-    _SystemMessageAutoOpen() {//実際には使わないが、この関数を参考にSystemMessageAutoOpenToText()を作る
+    // 実際には使わないが、この関数を参考にSystemMessageAutoOpenToText()を作る
+    ____SystemMessageAutoOpen() {
 
         new Promise((resolve) => {
             //プレーヤー設定を自動的に押す
@@ -316,7 +319,7 @@ class NicoDownloaderClass {
         })
     }
 
-    //SystemMessageのテキスト版を作成
+    //SystemMessageAutoOpenのテキスト版を作成
     SystemMessgeAutoOpenToText() {
         let text = ""
         text += "new Promise(function(resolve) {document.querySelector(&#39;" + VideoData.PlayerSettingQuery + "&#39;).click();resolve();})";
@@ -384,4 +387,113 @@ class NicoDownloaderClass {
     }
 
 
+    DownloadLinkClick() {
+        if (document.getElementById(VideoData.Video_DLlink.a2) != null) {
+            //ダウンロードのタグがあればクリック
+            const link = document.getElementById(VideoData.Video_DLlink.a2);
+            link.click();
+            link.remove();
+            this.ButtonTextWrite(this.LangText("保存完了")); //ボタンの文字を変更
+        }
+    }
+
+
+    // Download
+    async DownloadTextWithCookie(URL) {
+        return await fetch(URL, { credentials: 'include' })
+            .then((response) => {
+                if (response.status !== 200) {
+                    DebugPrint("Error downloading :" + URL);
+                    return -1;
+                }
+                return response.text();
+            });
+    }
+
+    // this.m3u8をセット
+    SetM3u8(Key, m3u8) {
+        this.M3u8[Key] = m3u8;
+    }
+
+    Parsem3u8(dataText) {
+        //""の間に,が来るとそこで止まるが仕方ないということにしておきます
+        //どうせそれでてくるやつ使わないので
+
+
+        DebugPrint(dataText);
+        //行毎に分ける
+        const Datas = dataText.split(/\n/);
+
+        //json
+        let jsondata = {};
+
+        //m3u8じゃなかったらパースができないので出る
+        if (Datas[0] != '#EXTM3U') {
+            return null;//ERROR
+        }
+
+        for (let i = 1; i < Datas.length; i++) {
+            if (Datas[i].startsWith('#EXT-X-ENDLIST')) {
+                //正常終了
+                break;
+            }
+            if (Datas[i] == '' && i == Datas.length - 1) {
+                //正常終了
+                break;
+            }
+            if (Datas[i].indexOf(':') == -1) {
+                continue;
+            }
+            if (Datas[i].startsWith('https') || Datas[i].indexOf('1/ts/') != -1 || Datas[i].indexOf('.ts?ht2_nicovideo') != -1) {
+                //URL行はいったん無視する
+            } else {
+                let tempData = Datas[i];
+                const Datakey_match = Datas[i].match(/#[A-Z-]+:/);
+
+                const Datakey = Datakey_match[0].replace('#', '').replace(':', '');
+                tempData = tempData.replace(Datakey_match, '')
+
+                if (!jsondata[Datakey]) {
+                    //空配列作成
+                    jsondata[Datakey] = [];
+                }
+
+
+
+                if (tempData.indexOf(',') == -1 && tempData.indexOf('=') == -1) {
+                    jsondata[Datakey].push(tempData);
+                } else {
+                    if (tempData.slice(0, 10).match(/[0-9].[0-9]{1,},/)) {
+                        let temp = { sec: tempData.match(/[0-9].[0-9]{1,},/) };
+                        jsondata[Datakey].push(temp);
+
+                    } else {
+                        let tempjson = {};
+                        DebugPrint(tempData);
+                        let temp = tempData.match(/[\w]+=[\"]?[\w:/.\-\?\=~& ]+[\"]?/g);
+
+                        for (let e = 0; e < temp.length; e++) {
+                            const key_match = temp[e].match(/[\w-]+=/);
+                            const key = key_match.toString().replace('=', '');
+                            let value = temp[e].replace(key_match, '').replaceAll('"', '').replaceAll('\\', '');
+                            tempjson[key] = value;
+                        }
+
+                        jsondata[Datakey].push(tempjson);
+
+                    }
+                }
+                if (Datas[i + 1].startsWith('https') || Datas[i + 1].indexOf('1/ts/') != -1 || Datas[i + 1].indexOf('.ts?ht2_nicovideo') != -1) {
+                    DebugPrint(Datas[i + 1]);
+                    const latest = jsondata[Datakey].length - 1;
+                    jsondata[Datakey][latest]['URI'] = Datas[i + 1];
+                }
+
+            }
+        }
+
+        return jsondata;
+
+
+    }
 }

@@ -5,30 +5,33 @@
 async function VideoDown() {
 
 
-    //必要なクラスの初期化
+    // 必要なクラスの初期化
     const NicoDownloader = new NicoDownloaderClass;//NicoDownloaderクラスの初期化
     const Nicovideo = new NicovideoClass;//NicovideoClassクラスの初期化
 
-    //Downloadingがtrueの場合は終了
+    // Downloadingがtrueの場合は終了
     if (NicoDownloader.VideoDownloadingCheck()) return false;
 
-    //現在のページのsm番号の取得しセット
+    // ダウンロードリンクをクリック
+    NicoDownloader.DownloadLinkClick();
+
+    // 現在のページのsm番号の取得しセット
     Nicovideo.video_sm = Nicovideo.VideoSmGet(NicoDownloader.MatchingSMIDArray);
 
     await Nicovideo.SetAllFromVideoSm(Nicovideo.video_sm);
 
     new Promise((resolve, reject) => {
-        //sm番号かタイトルが取得できなかったら終了
+        // sm番号かタイトルが取得できなかったら終了
         if (Nicovideo.video_sm == '' || Nicovideo.video_title == '') reject("video_sm or video_title is null");
 
 
-        //デフォルト動画ファイル名の定義
+        // デフォルト動画ファイル名の定義
         Nicovideo.video_name = NicoDownloader.VideoDownloadNameMake(Nicovideo.video_sm, Nicovideo.video_title);
 
-        //すでに作ったリンクがあるかどうか判別し、あれば削除
+        // すでに作ったリンクがあるかどうか判別し、あれば削除
         NicoDownloader.VideoTitleElementCheck(Nicovideo.video_sm);
 
-        //resolve
+        // resolve
         resolve();
     }).catch((err) => {
         DebugPrint("NDLGetData", err);
@@ -74,13 +77,15 @@ async function VideoDown() {
 
             //delivery.domand.nicovideo.jpの処理はこちら！
             if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
-                onclickDL(Nicovideo.video_sm, Nicovideo.video_name); // ダウンロード開始
+                // ダウンロード処理
+                MovieDownload_domand(Nicovideo.video_sm, Nicovideo.video_name, NicoDownloader).then(() => {
+                    NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
+                });
+
                 NicoDownloader.VideoLoadedSMIDSet(Nicovideo.video_sm);// ダウンロードしたsm番号を記録
-                NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
+
             }
 
-            // resolve
-            resolve();
         }).catch((value) => {
             DebugPrint("NDLDL");
             DebugPrint(value);
@@ -90,38 +95,6 @@ async function VideoDown() {
     }
     return true;
 };
-
-//domand 
-async function onclickDL(video_sm, video_name) {
-
-    let domand_m3u8;
-    try {
-        throw new Error('domand api error')
-
-    } catch (e) {
-
-        try {
-
-            if (SystemMessageContainer_masterURLGet() != false) {
-                domand_m3u8 = SystemMessageContainer_masterURLGet();
-            } else {
-                throw new Error('システムメッセージからの取得失敗');
-            }
-        } catch (e) {
-            VideoTitleElement_Write('保存失敗:1st m3u8 get error')
-            return false;
-        }
-    }
-
-    const return_domand = MovieDownload_domand(domand_m3u8, video_sm, video_name);
-    if (return_domand == -1) {
-        VideoTitleElement_Write('保存失敗:コンソールを参照してください')
-        return false;
-    }
-
-
-    return true;
-}
 
 function SystemMessgeAutoOpen_Text() {
     let text = ""
@@ -140,7 +113,7 @@ try {
 
         if (interval1st) {
             try {
-                downloadlink_click(); //ダウンロードリンクをクリック
+
                 VideoDown();
             } catch (e) {
                 console.log(e);
@@ -178,81 +151,42 @@ function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
 
 }
 
-//将来的にここはnicojson.jsのNicovideoClass.video_smを使う
-function video_sm_Get(match_sm) {
-    let video_sm = '';
-    if (location.href.match(match_sm)) {
-        video_sm = location.href.match(match_sm).toString();
-        DebugPrint("location.href.match match_sm true")
-        DebugPrint("match_sm : " + match_sm)
-    } else {
-        DebugPrint("location.href.match match_sm false")
-        DebugPrint("match_sm : " + match_sm)
-        DebugPrint("setOption(\"video_pattern\") : " + setOption("video_pattern"))
-    }
-    return video_sm;
-}
 
-function downloadlink_click() {
-    if (document.getElementById(VideoData.Video_DLlink.a2) != null) {
-        //ダウンロードのタグがあればクリック
-        const link = document.getElementById(VideoData.Video_DLlink.a2);
-        link.click();
-        link.remove();
-        documentWriteText("保存完了");
+/**
+ * 
+ * @param {String} video_sm 
+ * @param {String} video_name 
+ * @param {NicoDownloaderClass} NicoDownloader 
+ */
 
-    }
-}
+async function MovieDownload_domand(video_sm, video_name, NicoDownloader) {
+
+    //Firstm3u8URLを取得
+    const Firstm3u8URL = NicoDownloader.MasterURLGet();
+    NicoDownloader.SetM3u8("FirstURL", Firstm3u8URL);
+    NicoDownloader.SetM3u8("FirstBody", await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.FirstURL));
+    NicoDownloader.SetM3u8("FirstBody_json", NicoDownloader.Parsem3u8(NicoDownloader.M3u8.FirstBody));
 
 
-function VideoTitleElement_Write(txt) {//NicoDownloaderClass.ButtonTextWriteに置き換える
+    const Firstm3u8_body_json = NicoDownloader.Parsem3u8(NicoDownloader.M3u8.FirstBody);
 
-    document.getElementById(VideoData.Video_DLlink.a).innerHTML = txt;
 
-}
-function SystemMessageContainer_masterURLGet() {
-    //メッセージより読み込み
-    let rawMessage;
-    let tempURL = '';
-    for (let i = 0; i < document.getElementsByClassName(VideoData.SystemMessageContainer).length; i++) {
-        DebugPrint("masterURL" + i)
-        const message = document.getElementsByClassName(VideoData.SystemMessageContainer)[i].innerText;
-        if (message.match(/(動画の初期化処理が完了しました).*/)) {
-            DebugPrint("URL発見");
-            rawMessage = String(message)
-            tempURL = String(rawMessage.replace('動画の初期化処理が完了しました (', '').replace(')', ''));
-            DebugPrint("masterURL:" + tempURL);
-        }
-    };
-    if (tempURL == null) return false;
-    if (tempURL == '') return false;
-    const masterURL = tempURL;
-    if (masterURL == null) return false;
 
-    return masterURL;
-}
-async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name) {
+    console.log(NicoDownloader.M3u8.FirstBody_json)
+    const audio_m3u8_URL = NicoDownloader.M3u8.FirstBody_json["EXT-X-MEDIA"][0]['URI'];
+    const video_m3u8_URL = NicoDownloader.M3u8.FirstBody_json["EXT-X-STREAM-INF"][0]['URI'];
 
-    const Firstm3u8_body = await TextDownload_withCookie(Firstm3u8URL);
-    DebugPrint(Firstm3u8_body);
-
-    const Firstm3u8_body_json = m3u8_Parse(Firstm3u8_body);
-
-    console.log(Firstm3u8_body_json)
-    const audio_m3u8_URL = Firstm3u8_body_json["EXT-X-MEDIA"][0]['URI'];
-    const video_m3u8_URL = Firstm3u8_body_json["EXT-X-STREAM-INF"][0]['URI'];
-
-    const audio_m3u8_body = await TextDownload_withCookie(audio_m3u8_URL);
-    const video_m3u8_body = await TextDownload_withCookie(video_m3u8_URL);
-    const audio_m3u8_body_json = m3u8_Parse(audio_m3u8_body);
-    const video_m3u8_body_json = m3u8_Parse(video_m3u8_body);
+    const audio_m3u8_body = await NicoDownloader.DownloadTextWithCookie(audio_m3u8_URL);
+    const video_m3u8_body = await NicoDownloader.DownloadTextWithCookie(video_m3u8_URL);
+    const audio_m3u8_body_json = NicoDownloader.Parsem3u8(audio_m3u8_body);
+    const video_m3u8_body_json = NicoDownloader.Parsem3u8(video_m3u8_body);
 
     DebugPrint('audio:' + audio_m3u8_URL);
     DebugPrint('video:' + video_m3u8_URL);
 
     let replace_audio = replaceURL(audio_m3u8_body)
     let replace_video = replaceURL(video_m3u8_body)
-    let replace_Firstm3u8 = replaceURL(Firstm3u8_body)
+    let replace_Firstm3u8 = replaceURL(NicoDownloader.M3u8.FirstBody)
 
     let m3u8s = [replace_audio, replace_video, replace_Firstm3u8,
         makeFilename(audio_m3u8_URL), makeFilename(video_m3u8_URL), makeFilename(Firstm3u8URL)];
@@ -265,91 +199,4 @@ async function MovieDownload_domand(Firstm3u8URL, video_sm, video_name) {
     documentWriteText(video_name + "をダウンロード");
     documentWriteOnclick(DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name));
 }
-function genActionTrackID() {
-    //ニコニコにあったやつwatch.XXXXXXXXXXX.min.js
-    for (var e = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ0123456789".split(""), t = "", n = 0; n < 10; n++)
-        t += e[Math.floor(Math.random() * e.length)];
-    return t + "_" + Date.now()
-}
 
-function m3u8_Parse(dataText) {
-    //""の間に,が来るとそこで止まるが仕方ないということにしておきます
-    //どうせそれでてくるやつ使わないので
-
-
-    DebugPrint(dataText);
-    //行毎に分ける
-    const Datas = dataText.split(/\n/);
-
-    //json
-    let jsondata = {};
-
-    //m3u8じゃなかったらパースができないので出る
-    if (Datas[0] != '#EXTM3U') {
-        return null;//ERROR
-    }
-
-    for (let i = 1; i < Datas.length; i++) {
-        if (Datas[i].startsWith('#EXT-X-ENDLIST')) {
-            //正常終了
-            break;
-        }
-        if (Datas[i] == '' && i == Datas.length - 1) {
-            //正常終了
-            break;
-        }
-        if (Datas[i].indexOf(':') == -1) {
-            continue;
-        }
-        if (Datas[i].startsWith('https') || Datas[i].indexOf('1/ts/') != -1 || Datas[i].indexOf('.ts?ht2_nicovideo') != -1) {
-            //URL行はいったん無視する
-        } else {
-            let tempData = Datas[i];
-            const Datakey_match = Datas[i].match(/#[A-Z-]+:/);
-
-            const Datakey = Datakey_match[0].replace('#', '').replace(':', '');
-            tempData = tempData.replace(Datakey_match, '')
-
-            if (!jsondata[Datakey]) {
-                //空配列作成
-                jsondata[Datakey] = [];
-            }
-
-
-
-            if (tempData.indexOf(',') == -1 && tempData.indexOf('=') == -1) {
-                jsondata[Datakey].push(tempData);
-            } else {
-                if (tempData.slice(0, 10).match(/[0-9].[0-9]{1,},/)) {
-                    let temp = { sec: tempData.match(/[0-9].[0-9]{1,},/) };
-                    jsondata[Datakey].push(temp);
-
-                } else {
-                    let tempjson = {};
-                    DebugPrint(tempData);
-                    let temp = tempData.match(/[\w]+=[\"]?[\w:/.\-\?\=~& ]+[\"]?/g);
-
-                    for (let e = 0; e < temp.length; e++) {
-                        const key_match = temp[e].match(/[\w-]+=/);
-                        const key = key_match.toString().replace('=', '');
-                        let value = temp[e].replace(key_match, '').replaceAll('"', '').replaceAll('\\', '');
-                        tempjson[key] = value;
-                    }
-
-                    jsondata[Datakey].push(tempjson);
-
-                }
-            }
-            if (Datas[i + 1].startsWith('https') || Datas[i + 1].indexOf('1/ts/') != -1 || Datas[i + 1].indexOf('.ts?ht2_nicovideo') != -1) {
-                DebugPrint(Datas[i + 1]);
-                const latest = jsondata[Datakey].length - 1;
-                jsondata[Datakey][latest]['URI'] = Datas[i + 1];
-            }
-
-        }
-    }
-
-    return jsondata;
-
-
-}
