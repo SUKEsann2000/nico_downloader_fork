@@ -57,6 +57,11 @@ const VideoData = {
 
 }
 
+/**
+ * @param {String} NicovideoDownloader__LoadedVideoSMID
+ * @param {Boolean} NicovideoDownloader__NowDownloading
+ */
+
 //引き継ぎされる変数
 let NicovideoDownloader__LoadedVideoSMID = "-1"; // 読み込んだ動画のsmID
 let NicovideoDownloader__NowDownloading = false; // ダウンロード中かどうか true:ダウンロード中 false:ダウンロードしていない
@@ -74,10 +79,14 @@ class NicoDownloaderClass {
             "設定画面を開く": "設定画面を開く",
             "を保存": "を保存",
             "処理中": "処理中",
-            "保存完了": "保存完了"
+            "保存完了": "保存完了",
+            "をダウンロード": "をダウンロード",
         }
     }
 
+    /**
+     * コンストラクタ
+     */
     constructor() {
         this.MatchingSMIDArray = ""; // smIDの正規表現
         this.MatchingSMIDArraFirstSetting();
@@ -91,13 +100,26 @@ class NicoDownloaderClass {
         this.downloading = false; // ダウンロード中かどうか
         this.VideoDownloadingFirstSetting(); // ダウンロード中かどうかの初期状態を設定
 
+        this.M3u8Class = new NicovideoM3u8;
+
         //後で自ら設定しないといけない変数
         this.optionURL = '';// オプションページのURL
         this.LangSetting = "ja"; // 言語
+
         this.M3u8 = {}; // m3u8の最初の内容
+        this.TSURLs = []; // TSのURLリスト
+        this.TSFilenames = []; // TSのファイル名リスト
+
 
     }
-    //設定ファイルを読み込む
+
+
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 設定ファイルを読み込む
+     * @returns {Boolean} 読み込みに成功したかどうか true:成功 false:失敗
+     */
+    ////////////////////////////////////////////////////////////////////////
     MatchingSMIDArraFirstSetting() {
         try {
 
@@ -113,7 +135,12 @@ class NicoDownloaderClass {
         return true;
     }
 
-
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画の保存名の設定を行いVideoDownloadNameArrayにセットする
+     * @returns {Boolean} 
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadNameArraySetting() {
         const Setting = setOption("video_downloading");
         /*
@@ -143,7 +170,15 @@ class NicoDownloaderClass {
         return;
     }
 
-    //動画のダウンロード名を作成
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画のダウンロード名を作成する関数 
+     * @param {String} video_smID SMID
+     * @param {String} video_title タイトル
+     * @param {String} video_type 拡張子 (デフォルト: mp4)
+     * @returns {String} 動画のダウンロード名(例：smID_title.mp4)
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadNameMake(video_smID, video_title, video_type = "mp4") {
         let ret = this.VideoDownloadNameArray;
         ret = ret.replace("${NicoDownloaderClasssmID}", video_smID);
@@ -154,9 +189,13 @@ class NicoDownloaderClass {
         return ret;
     }
 
-
-
-    //この関数はすでに作ったリンクがあるかどうかを判別する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * この関数はすでに作ったリンクがあるかどうかを判別する
+     * @param {String} video_sm SMID
+     * @returns なし
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoTitleElementCheck(video_sm) {
         if (this.LoadedVideoSMID !== video_sm && this.LoadedVideoSMID !== "-1") {
             DebugPrint("this.LoadedVideoSMIDリセット")
@@ -169,26 +208,46 @@ class NicoDownloaderClass {
         return;
     }
 
-    //読み込み済みの動画をセットする
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 読み込み済みの動画をセットする
+     * @returns {Boolean}
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoLoadedSet() {
         this.LoadedVideoSMID = NicovideoDownloader__LoadedVideoSMID;
         return;
     }
 
-    // 動画をダウンロード中かどうかをセットする
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画をダウンロード中かどうかをセットする
+     * @returns {Boolean}
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadingSet() {
         NicovideoDownloader__NowDownloading = true;
         this.downloading = true;
         return;
     }
 
-    // 動画をダウンロード中かどうかの初期状態を設定する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画をダウンロード中かどうかの初期状態を設定する
+     * @returns {Boolean}
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadingFirstSetting() {
         this.downloading = NicovideoDownloader__NowDownloading;
         return;
     }
 
-    // 動画をダウンロード中かどうかをリセットする
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画をダウンロード中かどうかをリセットする
+     * @returns {Boolean}
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadingReset() {
         NicovideoDownloader__NowDownloading = false;
         this.downloading = false;
@@ -337,7 +396,7 @@ class NicoDownloaderClass {
             return VideoData.DLButton.a + " onclick=\'location.href=&quot;" + this.optionURL + "&quot;\' " + VideoData.DLButton.b + this.LangText("要初期設定") + "<a href=\"" + this.optionURL + "\"><br>" + this.LangText("設定画面を開く") + "</a>" + VideoData.DLButton.c;
         }
 
-        return VideoData.DLButton.a + " onclick=\'" + SystemMessgeAutoOpen_Text() + "\' " + VideoData.DLButton.b + video_name + this.LangText("を保存") + VideoData.DLButton.c + "</p>";
+        return VideoData.DLButton.a + " onclick=\'" + this.SystemMessgeAutoOpenToText() + "\' " + VideoData.DLButton.b + video_name + this.LangText("を保存") + VideoData.DLButton.c + "</p>";
     }
 
     //保存ボタンを作成
@@ -415,6 +474,15 @@ class NicoDownloaderClass {
         this.M3u8[Key] = m3u8;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * m3u8をパースする関数
+     * @param {String} dataText m3u8のテキストデータ
+     * @returns {Object} m3u8のJSONデータ
+     * @returns {null} m3u8じゃなかった場合
+     * @returns {null} パースに失敗した場合
+     */
+    ////////////////////////////////////////////////////////////////////////
     Parsem3u8(dataText) {
         //""の間に,が来るとそこで止まるが仕方ないということにしておきます
         //どうせそれでてくるやつ使わないので
@@ -496,7 +564,7 @@ class NicoDownloaderClass {
     }
 
     /**
-     * 
+     * URLをM3u8にセットする
      * @param {String} Key 
      * @param {String} URL 
      */
@@ -524,7 +592,95 @@ class NicoDownloaderClass {
 
 
 
-    M3u8ToM3u8Set() {
-        this.M3u8ToUrlSet()
+
+
+}
+
+
+
+class NicovideoM3u8 {
+
+    /**
+     * 
+     * @param {NicoDownloaderClass} NicoDownloader 
+     * @returns {Array} TSURLs
+     */
+    MakeURLListToTSURLs(NicoDownloader) {
+        return this._MakeURLList(NicoDownloader.M3u8.AudioBody_json, NicoDownloader.M3u8.VideoBody_json);
+    }
+
+    /**
+     * M3u8からURLリストを作成する
+     * @param {Object} audio_m3u8_body_json JSON Object形式のm3u8データ
+     * @param {Object} video_m3u8_body_json JSON Object形式のm3u8データ
+     * @returns {Array} TSURLs
+     */
+    _MakeURLList(audio_m3u8_body_json, video_m3u8_body_json) {
+        let TSURLs = [];
+        //URIキーをすべてTSURLsにいれる
+        TSURLs.push(audio_m3u8_body_json['EXT-X-MAP'][0]['URI']);
+        TSURLs.push(audio_m3u8_body_json['EXT-X-KEY'][0]['URI']);
+        for (let i = 0; i < audio_m3u8_body_json['EXTINF'].length; i++) {
+            TSURLs.push(audio_m3u8_body_json['EXTINF'][i]['URI']);
+        }
+        TSURLs.push(video_m3u8_body_json['EXT-X-MAP'][0]['URI']);
+        TSURLs.push(video_m3u8_body_json['EXT-X-KEY'][0]['URI']);
+        for (let i = 0; i < video_m3u8_body_json['EXTINF'].length; i++) {
+            TSURLs.push(video_m3u8_body_json['EXTINF'][i]['URI']);
+        }
+        return TSURLs;
+    }
+
+
+    /**
+     * 
+     * @param {NicoDownloaderClass} NicoDownloader 
+     * @returns {Array} TSFilenames
+     */
+    MakeTSFileNameListtoArray(NicoDownloader) {
+        return this._makeTSFilenames(NicoDownloader.TSURLs);
+    }
+
+    _makeTSFilenames(TSURLs) {
+
+        let TSFilenames = [];
+        //TSURLsのファイル名をすべて出す
+        for (let i = 0; i < TSURLs.length; i++) {
+            const fname = this.MakeTSFilename(TSURLs[i]);
+            TSFilenames.push(fname);
+        }
+        return TSFilenames;
+    }
+
+
+    /**
+     * 
+     * @param {String} url 
+     * @returns {String}
+     */
+    ReplaceURLToM3u8s(url) {
+        let temp = url.replace(/https:\/\/[\w\.\/-]+[\/]{1}/g, '');
+        temp = temp.replace(/[?][\w=\-&_~]+/g, '');
+
+        return temp;
+    }
+
+
+    /**
+     * 
+     * @param {String} URL 
+     * @returns {String}
+     */
+    MakeTSFilename(URL) {
+
+        let ret = '';
+        DebugPrint('URL:' + URL);
+        if (URL.startsWith('https')) {
+            ret = URL.match(/\/[\w-.]+\?/).toString().replace('/', '').replace('?', '');
+        } else {
+            ret = URL.match(/[\w-.]+\?/).toString().replace('/', '').replace('?', '');
+        }
+        DebugPrint('makeFilename: ' + ret + ' ' + URL);
+        return ret;
     }
 }

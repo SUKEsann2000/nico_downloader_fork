@@ -27,7 +27,6 @@ const ffmpeg = (Core, args) => {
   );//https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts
 };
 
-//const runFFmpeg = async (ifilename, data, args, ofilename, extraFiles = []) => {
 const runFFmpeg = async (Core, video_sm, ofilename) => {
   let resolve = null;
   const waitEnd = new Promise((r) => {
@@ -279,15 +278,4 @@ function sleep(waitMsec) {
 
   // 指定ミリ秒間だけループさせる（CPUは常にビジー状態）
   while (new Date() - startMsec < waitMsec);
-}
-
-async function ArrayDownload_withCookie(URL) {
-  return await fetch(URL, { credentials: 'include' })
-    .then((response) => {
-      if (response.status !== 200) {
-        DebugPrint("Error downloading :" + URL);
-        return -1;
-      }
-      return response.arrayBuffer();
-    });
 }

@@ -1,5 +1,3 @@
-
-
 //ダウンロード関数
 
 async function VideoDown() {
@@ -78,7 +76,7 @@ async function VideoDown() {
             //delivery.domand.nicovideo.jpの処理はこちら！
             if (masterURL.indexOf('delivery.domand.nicovideo.jp') != -1) {
                 // ダウンロード処理
-                MovieDownload_domand(Nicovideo.video_sm, Nicovideo.video_name, NicoDownloader).then(() => {
+                MovieDownload_domand(Nicovideo, NicoDownloader).then(() => {
                     NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
                 });
 
@@ -95,15 +93,6 @@ async function VideoDown() {
     }
     return true;
 };
-
-function SystemMessgeAutoOpen_Text() {
-    let text = ""
-    text += "new Promise(function(resolve) {document.querySelector(&#39;" + VideoData.PlayerSettingQuery + "&#39;).click();resolve();})";
-    text += ".then(function() {document.querySelector(&#39;" + VideoData.SystemMessageQuery + "&#39;).click();});";
-    return text;
-}
-
-
 let interval1st = false;
 let intervalId;
 try {
@@ -139,27 +128,14 @@ function documentWriteText(URItext) {
 }
 
 
-function documentWriteOnclick(onclick) {
-    document.getElementById(VideoData.Video_DLlink.a).onclick = onclick;
-}
-function DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name) {
-    documentWriteText("処理中……");
-
-    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
-    const format = video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
-    DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format);
-
-}
-
 
 /**
- * 
- * @param {String} video_sm 
- * @param {String} video_name 
+ *
+ * @param {NicovideoClass} Nicovideo
  * @param {NicoDownloaderClass} NicoDownloader 
  */
 
-async function MovieDownload_domand(video_sm, video_name, NicoDownloader) {
+async function MovieDownload_domand(Nicovideo, NicoDownloader) {
 
     //Firstm3u8URLを取得
     const Firstm3u8URL = NicoDownloader.MasterURLGet();
@@ -168,7 +144,6 @@ async function MovieDownload_domand(video_sm, video_name, NicoDownloader) {
     if (Firstm3u8URL == false) return false;
 
     //Firstm3u8URLの取得に成功した場合
-
     await NicoDownloader.URLToM3u8Set("First", Firstm3u8URL);//Firstm3u8URLをセット
 
     //Firstm3u8URLからaudio_m3u8_URLとvideo_m3u8_URLを取得
@@ -179,27 +154,29 @@ async function MovieDownload_domand(video_sm, video_name, NicoDownloader) {
     await NicoDownloader.URLToM3u8Set("Audio", NicoDownloader.M3u8.AudioM3u8URL);
     await NicoDownloader.URLToM3u8Set("Video", NicoDownloader.M3u8.VideoM3u8URL);
 
-    //const audio_m3u8_body = await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.AudioM3u8URL);
-    const audio_m3u8_body = NicoDownloader.M3u8.AudioBody;
-    const video_m3u8_body = NicoDownloader.M3u8.VideoBody;
-    //const video_m3u8_body = await NicoDownloader.DownloadTextWithCookie(NicoDownloader.M3u8.VideoM3u8URL);
-
-    const audio_m3u8_body_json = NicoDownloader.M3u8.AudioBody_json;
-    const video_m3u8_body_json = NicoDownloader.M3u8.VideoBody_json;
-
-    let replace_audio = replaceURL(audio_m3u8_body)
-    let replace_video = replaceURL(video_m3u8_body)
-    let replace_Firstm3u8 = replaceURL(NicoDownloader.M3u8.FirstBody)
-
-    let m3u8s = [replace_audio, replace_video, replace_Firstm3u8,
-        makeFilename(NicoDownloader.M3u8.AudioM3u8URL), makeFilename(NicoDownloader.M3u8.VideoM3u8URL), makeFilename(Firstm3u8URL)];
-    let TSURLs = makeTSURLs(video_m3u8_body_json, audio_m3u8_body_json);
 
 
-    let TSFilenames = makeTSFilenames(TSURLs);
+    // m3u8sを取得
+    const m3u8s = [
+        NicoDownloader.M3u8Class.ReplaceURLToM3u8s(NicoDownloader.M3u8.AudioBody),
+        NicoDownloader.M3u8Class.ReplaceURLToM3u8s(NicoDownloader.M3u8.VideoBody),
+        NicoDownloader.M3u8Class.ReplaceURLToM3u8s(NicoDownloader.M3u8.FirstBody),
+        NicoDownloader.M3u8Class.MakeTSFilename(NicoDownloader.M3u8.AudioM3u8URL),
+        NicoDownloader.M3u8Class.MakeTSFilename(NicoDownloader.M3u8.VideoM3u8URL),
+        NicoDownloader.M3u8Class.MakeTSFilename(Firstm3u8URL)
+    ];
+
+    // TSファイルのURLを取得
+    NicoDownloader.TSURLs = NicoDownloader.M3u8Class.MakeURLListToTSURLs(NicoDownloader);
+
+    // TSファイル名を取得
+    NicoDownloader.TSFilenames = NicoDownloader.M3u8Class.MakeTSFileNameListtoArray(NicoDownloader)
 
 
-    documentWriteText(video_name + "をダウンロード");
-    documentWriteOnclick(DLstartOnclick(TSURLs, TSFilenames, m3u8s, video_sm, video_name));
+
+    documentWriteText("処理中……");
+    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+    const format = Nicovideo.video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
+    DownEncoder(NicoDownloader.TSURLs, NicoDownloader.TSFilenames, m3u8s, Nicovideo.video_sm, Nicovideo.video_name, format);
 }
 
