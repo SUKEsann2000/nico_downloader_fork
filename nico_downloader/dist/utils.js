@@ -2,11 +2,8 @@
 //をもとに改造したもの
 //LGPL
 
-let last_load_sm = "";
 let last_save_sm = "";
 let last_save_sm_URI = "";
-let faults = 0;
-let load_percentage = 0;
 
 const parseArgs = (Core, args) => {
   const argsPtr = Core._malloc(args.length * Uint32Array.BYTES_PER_ELEMENT);
@@ -101,14 +98,21 @@ function FiletypeToMimetype(filetype) {
  * @returns 
  */
 async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
-  const TSURLs = NicoDownloader.TSURLs;
-  const TSFilenames = NicoDownloader.TSFilenames;
-  const format = NicoDownloader.GetFormatToString(Nicovideo.video_name);
 
-  if (last_load_sm === Nicovideo.video_sm) return;
-  last_load_sm = Nicovideo.video_sm;//2度読み込みを防ぐ
-  faults = 0;//失敗数を記録
-  load_percentage = 0;//読み込みパーセント
+  NicoDownloader.SetVideoFormat(Nicovideo.video_name);//フォーマットをセット
+  if (NicoDownloader.CheckVideoFormat() == false) return false;//フォーマットをチェック
+
+
+  //ダウンロード前のチェック処理
+  if (NicoDownloader.VideoDownloadingCheck()) {//ダウンロード中は終了
+    return false;
+  } else {
+    NicoDownloader.VideoDownloadingSet();//ダウンロード中フラグを立てる
+  }
+
+  NicoDownloader.DownloadFaultNumReset();//ダウンロードエラー数をリセット
+
+  NicoDownloader.DownloadPercentageReset();//パーセンテージをリセット
 
 
 
@@ -123,7 +127,7 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
         DebugPrint("FFMPEG_END 変換終了");
         if (last_save_sm !== Nicovideo.video_sm) {
           last_save_sm = Nicovideo.video_sm;
-          const ofilename = Nicovideo.video_sm + "." + format;
+          const ofilename = Nicovideo.video_sm + "." + NicoDownloader.CheckVideoFormat();
           file = core.FS.readFile(ofilename);
           console.log({ file });
           core.FS.unlink(ofilename);
@@ -132,7 +136,7 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
           const blob = new Blob(
             [file.buffer],
             {
-              type: FiletypeToMimetype(format),
+              type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
             });
 
 
@@ -165,25 +169,25 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
   //URLsを片っ端から処理
   //落としてファイルシステムにいれていく
   let promises = [];
-  for (let i = 0; i < TSURLs.length; i++) {
+  for (let i = 0; i < NicoDownloader.TSURLs.length; i++) {
 
     const promise = new Promise((resolve, reject) => {
 
 
-      DownloadUint8Array(TSURLs[i])
+      DownloadUint8Array(NicoDownloader.TSURLs[i], NicoDownloader)
         .then(byte => {
           let filenumber = i + 1;
 
-          let filename = TSFilenames[i];
+          let filename = NicoDownloader.TSFilenames[i];
           core.FS.writeFile(filename, byte);
           DebugPrint("FSwrite:" + filename);
 
-          const downpercentage = 100 * filenumber / TSURLs.length;
-          if (downpercentage > load_percentage) {
-            load_percentage = downpercentage;
+          const downpercentage = 100 * filenumber / NicoDownloader.TSURLs.length;
+          if (downpercentage > NicoDownloader.DownloadPercentageGet()) {
+            NicoDownloader.DownloadPercentageSet(downpercentage);
           }
-          let text_dl = "ダウンロード中…… (" + load_percentage.toFixed(1) + "%)";
-          if (faults != 0) {
+          let text_dl = "ダウンロード中…… (" + NicoDownloader.DownloadPercentageGet().toFixed(1) + "%)";
+          if (NicoDownloader.DownloadFaultNumCheck() != 0) {
             text_dl += "●";
           }
 
@@ -209,7 +213,9 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
 
   //Transcodeする
 
-  await Promise.all(promises).then(() => {
+  await Promise.all(
+    promises
+  ).then(() => {
 
     //間違ってURLを読みに行くのでm3u8を3つ書き換える
     //m3u8末尾の3個
@@ -223,28 +229,25 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
     NicoDownloader.ButtonTextWrite('結合処理中');
 
 
-    Transcode(core, Nicovideo.video_sm, m3u8name, format, NicoDownloader);
-  }
-  )
+    Transcode(core, Nicovideo.video_sm, m3u8name, NicoDownloader).then(() => {
+      NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
+    });
+  });
 
-  return;
+  return true;
 
 }
 
 /**
  * URLからダウンロードし、Blobを返す
  * @param {String} url ダウンロードするURL
+ * @param {NicoDownloaderClass} NicoDownloader
  * @returns {Object} Blob
  */
-async function Downloadblob(url) {
-
-  //if (!url.match(/ts/)) {
-  //  return null;
-  //}
+async function Downloadblob(url, NicoDownloader) {
 
   //TSの取得
-  //let res = await fetch_retry(url, { method: 'GET' }, 100);
-  let res = await fetch_retry(url, { credentials: 'include' }, 100);
+  let res = await fetch_retry(url, NicoDownloader, { credentials: 'include' }, 100);
 
   let blob = res.blob();
   DebugPrint("BLOBgetEnd:" + url);
@@ -254,10 +257,11 @@ async function Downloadblob(url) {
 /**
  * URLからダウンロードし、Uint8Arrayを返す
  * @param {String} url ダウンロードするURL
+ * @param {NicoDownloaderClass} NicoDownloader
  * @returns {Object} Uint8Array
  */
-async function DownloadUint8Array(url) {
-  let blob = await Downloadblob(url);
+async function DownloadUint8Array(url, NicoDownloader) {
+  let blob = await Downloadblob(url, NicoDownloader);
   let byte = null;
   await blob.arrayBuffer().then(data => {
     byte = new Uint8Array(data);
@@ -265,8 +269,8 @@ async function DownloadUint8Array(url) {
   return byte;
 }
 
-const Transcode = async function (Core, video_sm, m3u8name, format = "mp4", NicoDownloader) {
-  const outputvideo_name = video_sm + "." + format;
+const Transcode = async function (Core, video_sm, m3u8name, NicoDownloader) {
+  const outputvideo_name = video_sm + "." + NicoDownloader.CheckVideoFormat();
 
   NicoDownloader.ButtonTextWrite("変換中……");
   //const { file } = await runFFmpeg(Core, video_sm, outputvideo_name, fps);
@@ -275,7 +279,7 @@ const Transcode = async function (Core, video_sm, m3u8name, format = "mp4", Nico
 };
 
 //https://qiita.com/ksakiyama134/items/8cfb0cf96d8f7c7be5b3
-const fetch_retry = async (url, options, n) => {
+const fetch_retry = async (url, NicoDownloader, options, n) => {
   try {
     DebugPrint('fetchurl: ' + url);
     let fetched = await fetch(url, options);
@@ -283,16 +287,16 @@ const fetch_retry = async (url, options, n) => {
       return fetched;
     } else {
       DebugPrint("retry:" + url);
-      faults++;
+      NicoDownloader.DownloadFaultNumberAdd();
       sleep(1000);
-      return await fetch_retry(url, options, n - 1);
+      return await fetch_retry(url, NicoDownloader, options, n - 1);
     }
   } catch (err) {
-    faults++;
+    NicoDownloader.DownloadFaultNumberAdd();
     sleep(1000);
     DebugPrint("retry:" + url);
     if (n === 1) throw err;
-    return await fetch_retry(url, options, n - 1);
+    return await fetch_retry(url, NicoDownloader, options, n - 1);
   }
 };
 

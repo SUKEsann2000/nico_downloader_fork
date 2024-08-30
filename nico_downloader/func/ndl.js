@@ -109,7 +109,11 @@ class NicoDownloaderClass {
         this.M3u8 = {}; // m3u8の最初の内容
         this.TSURLs = []; // TSのURLリスト
         this.TSFilenames = []; // TSのファイル名リスト
+        this.VideoFormat = "";//動画の拡張子
 
+        //ダウンロード中用変数
+        this.DownloadFaultNum = 0;
+        this.DownloadPercentage = 0;
 
     }
 
@@ -706,11 +710,13 @@ class NicoDownloaderClass {
         return jsondata;
     }
 
+    ////////////////////////////////////////////////////////////////////////
     /**
      * URLをM3u8にセットする
      * @param {String} Key 
      * @param {String} URL 
      */
+    ////////////////////////////////////////////////////////////////////////
     async URLToM3u8Set(Key, URL) {
 
         //Firstm3u8URLの取得に成功した場合
@@ -732,17 +738,105 @@ class NicoDownloaderClass {
         return true;
     }
 
+    ////////////////////////////////////////////////////////////////////////
     /**
      * video_nameから末尾にある拡張子のみ抽出し、formatに代入する
      * @param {String} video_name 
      * @returns {String} format
      */
+    ////////////////////////////////////////////////////////////////////////
     GetFormatToString(video_name) {
         return video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * video_nameから末尾にある拡張子のみ抽出し、VideoFormatにセットする
+     * @param {String} video_name
+     * @returns {Boolean}
+     * true:成功
+     * false:失敗
+        */
+    ////////////////////////////////////////////////////////////////////////
+    SetVideoFormat(video_name) {
+        this.VideoFormat = this.GetFormatToString(video_name);
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * VideoFormatをチェックする
+     * @returns {String} VideoFormat VideoFormatがある場合
+     * @returns {Boolean} false VideoFormatがない場合
+    */
+    ////////////////////////////////////////////////////////////////////////
+    CheckVideoFormat() {
+        if (this.VideoFormat == null) return false;
+        if (this.VideoFormat == '') return false;
+        return this.VideoFormat;
+    }
 
 
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード失敗数を1追加
+     * @returns {Boolean}
+     * true:成功
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadFaultNumAdd() {
+        this.DownloadFaultNum++;
+        return true;
+    }
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード失敗数をリセット
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadFaultNumReset() {
+        this.DownloadFaultNum = 0;
+        return true;
+    }
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード失敗数を取得
+     * @returns {Number} ダウンロード失敗数
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadFaultNumCheck() {
+        return this.DownloadFaultNum;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード進捗をセット
+     * @param {Number} percentage 進捗
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadPercentageSet(percentage) {
+        this.DownloadPercentage = percentage;
+        return true;
+    }
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード進捗をリセット
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadPercentageReset() {
+        this.DownloadPercentage = 0;
+        return true;
+    }
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード進捗を取得
+     * @returns {Number} ダウンロード進捗
+    */
+    ////////////////////////////////////////////////////////////////
+    DownloadPercentageGet() {
+        return this.DownloadPercentage;
+    }
 
 }
 

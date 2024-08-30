@@ -11,8 +11,6 @@ nicovideo.SetAllFromVideoSm('sm9').then(() => {
 });
 */
 
-// 必要な変数
-const NicoVideoWatchURL = 'https://www.nicovideo.jp/watch/';
 
 // 残さねばならない変数
 let Nicovideo______Ndl______DataLoadedSMID = '-1'; // データを取得した動画のsmid
@@ -20,6 +18,9 @@ let Nicovideo______Ndl______DataLoadedJSON = {}; // JSONデータ
 
 class NicovideoClass {
     constructor() {
+        //動かさない変数
+        this.NicoVideoWatchURL = 'https://www.nicovideo.jp/watch/'; // 動画のURL
+
         this.video_sm = ''; // 動画id
         this.json = {}; // json
         this.view_count = 0; // 再生数
@@ -31,6 +32,17 @@ class NicovideoClass {
         //後で自ら設定しないといけない変数
         this.video_name = "";// 動画の保存名
     }
+
+    //URLがマッチするか確認
+    CheckNicovideoWatchURL() {
+        if (location.href.match(/https:\/\/www.nicovideo.jp\/watch\//)) {
+            DebugPrint("location.href.match true");
+            return true;
+        }
+        DebugPrint("location.href.match false");
+        return false;
+    }
+
 
     //jsonをダウンロード後jsonをセットし、その後各変数をセット
     async SetAllFromVideoSm(video_sm) {
@@ -47,6 +59,9 @@ class NicovideoClass {
         }
         return this.DownloadJson(video_sm)
             .then(json => {
+                if (json == false) return false;// jsonが取得できなかったら終了
+
+                // jsonを取得できたら各変数をセット
                 DebugPrint("NicovideoClass: SetAllFromVideoSm: DownloadJSON");
                 DebugPrint(json);
                 this.SetJson(json);
@@ -57,7 +72,8 @@ class NicovideoClass {
 
     //jsonをダウンロード
     async DownloadJson(video_sm = this.video_sm) {
-        const url = NicoVideoWatchURL + video_sm + '?responseType=json';
+        if (video_sm == '') return false;
+        const url = this.NicoVideoWatchURL + video_sm + '?responseType=json';
         return fetch(url).then(response => response.json());
     }
     //jsonをセット

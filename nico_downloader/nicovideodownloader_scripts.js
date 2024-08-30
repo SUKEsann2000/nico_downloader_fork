@@ -2,10 +2,12 @@
 
 async function VideoDown() {
 
-
     // 必要なクラスの初期化
     const NicoDownloader = new NicoDownloaderClass;//NicoDownloaderクラスの初期化
     const Nicovideo = new NicovideoClass;//NicovideoClassクラスの初期化
+
+    //そもそもマッチするか確認
+    if (Nicovideo.CheckNicovideoWatchURL() == false) return false;
 
     // Downloadingがtrueの場合は終了
     if (NicoDownloader.VideoDownloadingCheck()) return false;
