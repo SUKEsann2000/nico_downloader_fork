@@ -97,17 +97,21 @@ let interval1st = false;
 let intervalId;
 try {
 
+
     clearInterval(intervalId)
+
+    // 2秒ごとにVideoDownを実行
     intervalId = setInterval(() => {
 
         if (interval1st) {
+            // 2回目以降は実行
             try {
-
                 VideoDown();
             } catch (e) {
                 console.log(e);
             }
         } else {
+            // 1回目は実行しない
             interval1st = true;
         }
 
@@ -174,9 +178,7 @@ async function MovieDownload_domand(Nicovideo, NicoDownloader) {
 
 
 
-    documentWriteText("処理中……");
-    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
-    const format = Nicovideo.video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
-    DownEncoder(NicoDownloader.TSURLs, NicoDownloader.TSFilenames, m3u8s, Nicovideo.video_sm, Nicovideo.video_name, format);
+    NicoDownloader.ButtonTextWrite("処理中");//ボタンの文字を変更
+    DownEncoder(NicoDownloader, m3u8s, Nicovideo);
 }
 

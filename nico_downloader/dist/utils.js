@@ -69,9 +69,14 @@ const runFFmpeg_m3u8 = async (Core, m3u8name, ofilename) => {
 
 };
 
-const b64ToUint8Array = (str) => (Uint8Array.from(atob(str), c => c.charCodeAt(0)));
-
-
+/**
+ * ファイルタイプからMIMEタイプを返す
+ * @param {String} filetype ファイルタイプ
+ * @returns {String} MIMEタイプ
+ * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+ * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+ * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
+  */
 function FiletypeToMimetype(filetype) {
   switch (filetype) {
     case "mp4":
@@ -88,10 +93,20 @@ function FiletypeToMimetype(filetype) {
 }
 
 //ここから追記
-async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, format = "mp4") {
+/**
+ * ダウンロードし変換する関数
+ * @param {NicoDownloaderClass} NicoDownloader 
+ * @param {Array} m3u8s 
+ * @param {NicovideoClass} Nicovideo
+ * @returns 
+ */
+async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
+  const TSURLs = NicoDownloader.TSURLs;
+  const TSFilenames = NicoDownloader.TSFilenames;
+  const format = NicoDownloader.GetFormatToString(Nicovideo.video_name);
 
-  if (last_load_sm === video_sm) return;
-  last_load_sm = video_sm;//2度読み込みを防ぐ
+  if (last_load_sm === Nicovideo.video_sm) return;
+  last_load_sm = Nicovideo.video_sm;//2度読み込みを防ぐ
   faults = 0;//失敗数を記録
   load_percentage = 0;//読み込みパーセント
 
@@ -106,9 +121,9 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
       DebugPrint(`FFMPEG: ${e}`);
       if (e.startsWith("FFMPEG_END")) {
         DebugPrint("FFMPEG_END 変換終了");
-        if (last_save_sm !== video_sm) {
-          last_save_sm = video_sm;
-          const ofilename = video_sm + "." + format;
+        if (last_save_sm !== Nicovideo.video_sm) {
+          last_save_sm = Nicovideo.video_sm;
+          const ofilename = Nicovideo.video_sm + "." + format;
           file = core.FS.readFile(ofilename);
           console.log({ file });
           core.FS.unlink(ofilename);
@@ -128,18 +143,18 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
           const link = document.getElementById(VideoData.Video_DLlink.a2);
           link.href = URL.createObjectURL(blob);
-          link.download = video_name;
+          link.download = Nicovideo.video_name;
 
           link.style.display = 'none';
 
           document.body.click();
 
-          documentWriteText("まもなく保存完了");
+          NicoDownloader.ButtonTextWrite("まもなく保存完了");
 
 
 
         } else {
-          documentWriteText("まもなく保存完了");
+          NicoDownloader.ButtonTextWrite("まもなく保存完了");
         }
 
       }
@@ -149,7 +164,6 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
 
   //URLsを片っ端から処理
   //落としてファイルシステムにいれていく
-  let Fstext = "";
   let promises = [];
   for (let i = 0; i < TSURLs.length; i++) {
 
@@ -173,7 +187,7 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
             text_dl += "●";
           }
 
-          documentWriteText(text_dl);
+          NicoDownloader.ButtonTextWrite(text_dl);
 
           DebugPrint("180: " + core.FS.stat(filename));
           resolve(filename);
@@ -206,17 +220,22 @@ async function DownEncoder(TSURLs, TSFilenames, m3u8s, video_sm, video_name, for
     }
 
     const m3u8name = m3u8s[m3u8s.length - 1];
-    documentWriteText('結合処理中');
+    NicoDownloader.ButtonTextWrite('結合処理中');
 
 
-    //await Transcode(core, video_sm);
-    Transcode(core, video_sm, m3u8name, format);
+    Transcode(core, Nicovideo.video_sm, m3u8name, format, NicoDownloader);
   }
   )
 
   return;
 
 }
+
+/**
+ * URLからダウンロードし、Blobを返す
+ * @param {String} url ダウンロードするURL
+ * @returns {Object} Blob
+ */
 async function Downloadblob(url) {
 
   //if (!url.match(/ts/)) {
@@ -232,6 +251,11 @@ async function Downloadblob(url) {
   return blob;
 };
 
+/**
+ * URLからダウンロードし、Uint8Arrayを返す
+ * @param {String} url ダウンロードするURL
+ * @returns {Object} Uint8Array
+ */
 async function DownloadUint8Array(url) {
   let blob = await Downloadblob(url);
   let byte = null;
@@ -241,9 +265,10 @@ async function DownloadUint8Array(url) {
   return byte;
 }
 
-const Transcode = async function (Core, video_sm, m3u8name, format = "mp4") {
+const Transcode = async function (Core, video_sm, m3u8name, format = "mp4", NicoDownloader) {
   const outputvideo_name = video_sm + "." + format;
-  documentWriteText("変換中……");
+
+  NicoDownloader.ButtonTextWrite("変換中……");
   //const { file } = await runFFmpeg(Core, video_sm, outputvideo_name, fps);
   const { file } = await runFFmpeg_m3u8(Core, m3u8name, outputvideo_name);
   return file;
@@ -279,3 +304,5 @@ function sleep(waitMsec) {
   // 指定ミリ秒間だけループさせる（CPUは常にビジー状態）
   while (new Date() - startMsec < waitMsec);
 }
+
+

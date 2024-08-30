@@ -254,14 +254,29 @@ class NicoDownloaderClass {
         return;
     }
 
-    // 動画をダウンロード中かどうかをチェックする
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画をダウンロード中かどうかをチェックする
+     * @returns {Boolean} ダウンロード中かどうか 
+     * true:ダウンロード中
+     * false:ダウンロードしていない
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoDownloadingCheck() {
         return this.downloading;
         //true:ダウンロード中
         //false:ダウンロードしていない
     }
 
-    //この関数はすでに動画を読み込んだかどうかを判別する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * この関数はすでに動画を読み込んだかどうかを判別する
+     * @param {String} video_sm SMID
+     * @returns {Boolean} 読み込み済みかどうか
+     * true:読み込み済み
+     * false:読み込み済みでない
+     */
+    ////////////////////////////////////////////////////////////////////////
     VideoLoadedCheck(video_sm) {
         if (this.LoadedVideoSMID === video_sm) {
             return true;//すでに読み込んでいる
@@ -269,15 +284,29 @@ class NicoDownloaderClass {
         return false;//読み込んでいない
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 読み込んだ動画のsmIDをセットする
+     * @param {String} video_sm SMID
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     VideoLoadedSMIDSet(video_sm) {
         this.LoadedVideoSMID = video_sm;
         NicovideoDownloader__LoadedVideoSMID = this.LoadedVideoSMID;
-        return;
+        return true;
     }
 
 
 
-    //リンクの作成をする
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 動画の直下にボタンを作成する
+     * @returns {Boolean} 
+     * true:成功
+     * false:失敗
+    */
+    ////////////////////////////////////////////////////////////////////////
     ButtonFirstMake() {
 
         let p_link = document.createElement("p");
@@ -293,34 +322,66 @@ class NicoDownloaderClass {
             document.getElementsByClassName(VideoData.Video_title_Element)[0].querySelector("p").appendChild(a_link);
         }
 
-        return;
+        return true;
     }
 
-    //ボタンに文字を書き込む
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * ボタンに文字を書き込む
+     * @param {String} text ボタンに書き込む文字 LangTextで処理される
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     ButtonTextWrite(text) {
         // 多言語対応
         document.getElementById(VideoData.Video_DLlink.a).innerHTML = VideoData.DLButton.a + VideoData.DLButton.b + this.LangText(text) + VideoData.DLButton.c;
         return;
     }
 
-    //ボタンのinnerHTMLを書き換える
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * ボタンのinnerHTMLを書き換える
+     * @param {String} innerHTML ボタンに書き込むHTML
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     ButtonInnerHTMLWrite(innerHTML) {
         document.getElementById(VideoData.Video_DLlink.a).innerHTML = innerHTML;
-        return;
+        return true;
     }
 
-    //多言語対応
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 言語設定をセットする
+     * @param {String} lang 言語
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     LangSetting(lang) {
         this.LangSetting = lang;
         return;
     }
 
-    //多言語対応のための関数
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 多言語対応のための関数
+     * @param {String} text 入力したいテキスト
+     * @returns {String} 多言語対応のテキスト(設定により自動変換)
+     * @returns {String} または入力したテキスト(変換先ない場合)
+    */
+    ////////////////////////////////////////////////////////////////////////
     LangText(text) {
         return this.Lang[this.LangSetting][text] || text;
     }
 
-    //MainVideoPlayerが読み込めるかどうかを判別する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * MainVideoPlayerが読み込めるかどうかを判別する
+     * @returns {Boolean}　MainVideoPlayerが読み込めるかどうか
+     * true:読み込める
+     * false:読み込めない
+    */
+    ////////////////////////////////////////////////////////////////////////
     CheckMainVideoPlayer() {
         if (document.querySelector("video").getAttribute('src') == null) {
             return false;
@@ -328,7 +389,14 @@ class NicoDownloaderClass {
         return true;
     }
 
-    //SystemMessageが読み込めるかどうかを判別する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * SystemMessageが読み込めるかどうかを判別する
+     * @returns {Boolean}　SystemMessageが読み込めるかどうか
+     * true:読み込める
+     * false:読み込めない
+    */
+    ////////////////////////////////////////////////////////////////////////
     CheckSystemMessageContainer() {
         if (document.getElementsByClassName(VideoData.SystemMessageContainer).length == 0) {
             return false;
@@ -338,7 +406,14 @@ class NicoDownloaderClass {
     }
 
 
-    //ダウンロード前チェックを一括で行う
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロード前チェックを一括で行う
+     * @returns {Boolean} ダウンロード前チェックが成功したかどうか
+     * true:成功
+     * false:失敗
+    */
+    ////////////////////////////////////////////////////////////////////////
     CheckBeforeDownload() {
         //MainVideoPlayerが読み込めるかどうかを判別する
         if (!this.CheckMainVideoPlayer()) {
@@ -359,13 +434,24 @@ class NicoDownloaderClass {
         return true;
     }
 
-    // Savemodeの読み込み
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * Savemodeをオプション設定より読み込み
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     SavemodeSetting() {
         this.Savemode = setOption("video_hlssave");
         return;
     }
 
-    // 実際には使わないが、この関数を参考にSystemMessageAutoOpenToText()を作る
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * SystemMessageAutoOpenの関数
+     * 実際には使わないが、この関数を参考にSystemMessageAutoOpenToText()を作る
+     * @returns なし
+    */
+    ////////////////////////////////////////////////////////////////////////    
     ____SystemMessageAutoOpen() {
 
         new Promise((resolve) => {
@@ -378,7 +464,12 @@ class NicoDownloaderClass {
         })
     }
 
-    //SystemMessageAutoOpenのテキスト版を作成
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * SystemMessageAutoOpenのテキスト版を作成
+     * @returns {String} SystemMessageAutoOpenのテキスト版
+    */
+    ////////////////////////////////////////////////////////////////////////
     SystemMessgeAutoOpenToText() {
         let text = ""
         text += "new Promise(function(resolve) {document.querySelector(&#39;" + VideoData.PlayerSettingQuery + "&#39;).click();resolve();})";
@@ -386,7 +477,14 @@ class NicoDownloaderClass {
         return text;
     }
 
-    //保存ボタンの中身を作成
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 保存ボタンの中身を作成
+     * @param {String} video_name 動画の名前
+     * @returns {String} HTML - 保存ボタンの中身
+     * @returns {String} HTML - 保存ボタンの中身(要初期設定)
+    */
+    ////////////////////////////////////////////////////////////////////////
     SaveButtonInnerHTMLMake(video_name) {
         if (this.Savemode == "0") {
             // optionページのURLを取得
@@ -399,14 +497,28 @@ class NicoDownloaderClass {
         return VideoData.DLButton.a + " onclick=\'" + this.SystemMessgeAutoOpenToText() + "\' " + VideoData.DLButton.b + video_name + this.LangText("を保存") + VideoData.DLButton.c + "</p>";
     }
 
-    //保存ボタンを作成
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 実際の保存ボタンを作成
+     * SaveButtonInnerHTMLMakeを使ってボタンの中身を作成し、ボタンに書き込む
+     * @param {String} video_name 動画の名前
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     SaveButtonMake(video_name) {
         const innerHTML = this.SaveButtonInnerHTMLMake(video_name);
         this.ButtonInnerHTMLWrite(innerHTML);
         return;
     }
 
-    //nico downloaderの初期設定していなかったら止める
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * nico downloaderの初期設定していなかったら止める
+     * @returns {Boolean} 初期設定しているかどうか
+     * true:初期設定している
+     * false:初期設定していない
+    */
+    ////////////////////////////////////////////////////////////////////////
     NicoDownloaderFirstSettingCheck() {
         if (document.getElementById(VideoData.Video_DLlink.a).innerHTML.indexOf(this.LangText("要初期設定")) != -1) {
             return false;
@@ -414,13 +526,24 @@ class NicoDownloaderClass {
         return true;
     }
 
-    //video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+     * @param {String} video_name 動画の名前
+     * @returns {String} format 動画の拡張子
+    */
+    ////////////////////////////////////////////////////////////////////////
     FormatSetting(video_name) {
         return video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
 
     }
 
-    //SystemMessageContainerからmasterURLを取得
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * SystemMessageContainerからmasterURLを取得
+     * @returns {String} masterURL
+     */
+    ////////////////////////////////////////////////////////////////////////
     MasterURLGet() {
         //メッセージより読み込み
         let rawMessage;
@@ -446,6 +569,13 @@ class NicoDownloaderClass {
     }
 
 
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * ダウンロードリンクをクリックする
+     * クリック後リンクを削除し、ボタンの文字を変更する
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
     DownloadLinkClick() {
         if (document.getElementById(VideoData.Video_DLlink.a2) != null) {
             //ダウンロードのタグがあればクリック
@@ -457,7 +587,13 @@ class NicoDownloaderClass {
     }
 
 
-    // Download
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * クッキーを保持したままテキストデータをダウンロードする
+     * @param {String} URL 
+     * @returns {String} テキストデータ
+     */
+    ////////////////////////////////////////////////////////////////////////
     async DownloadTextWithCookie(URL) {
         return await fetch(URL, { credentials: 'include' })
             .then((response) => {
@@ -469,7 +605,14 @@ class NicoDownloaderClass {
             });
     }
 
-    // this.m3u8をセット
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * m3u8をセットする
+     * @param {String} Key
+     * @param {String} m3u8
+     * @returns
+    */
+    ////////////////////////////////////////////////////////////////////////
     SetM3u8(Key, m3u8) {
         this.M3u8[Key] = m3u8;
     }
@@ -589,7 +732,14 @@ class NicoDownloaderClass {
         return true;
     }
 
-
+    /**
+     * video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+     * @param {String} video_name 
+     * @returns {String} format
+     */
+    GetFormatToString(video_name) {
+        return video_name.match(/\.[a-zA-Z0-9]+$/).toString().replace('.', '');
+    }
 
 
 
@@ -599,22 +749,25 @@ class NicoDownloaderClass {
 
 
 class NicovideoM3u8 {
-
+    ////////////////////////////////////////////////////////////////
     /**
-     * 
+     * URLリストからTSURLsを作成する
      * @param {NicoDownloaderClass} NicoDownloader 
      * @returns {Array} TSURLs
      */
+    ////////////////////////////////////////////////////////////////
     MakeURLListToTSURLs(NicoDownloader) {
         return this._MakeURLList(NicoDownloader.M3u8.AudioBody_json, NicoDownloader.M3u8.VideoBody_json);
     }
 
+    ////////////////////////////////////////////////////////////////
     /**
      * M3u8からURLリストを作成する
      * @param {Object} audio_m3u8_body_json JSON Object形式のm3u8データ
      * @param {Object} video_m3u8_body_json JSON Object形式のm3u8データ
      * @returns {Array} TSURLs
      */
+    ////////////////////////////////////////////////////////////////
     _MakeURLList(audio_m3u8_body_json, video_m3u8_body_json) {
         let TSURLs = [];
         //URIキーをすべてTSURLsにいれる
