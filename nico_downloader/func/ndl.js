@@ -21,7 +21,9 @@ const VideoData = {
     Video_title: 'fs_xl fw_bold',
 
     // タイトルの場所のクエリで、ボタンを追加する場所
-    Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
+    //Video_title_Element: 'd_flex justify_space-between items_flex-start gap_x3 w_100%',
+    Video_title_Element: 'd_flex jc_space-between ai_flex-start gap_x3 w_100%',
+
     //Video_title_Element: 'd_flex w_[268px] gap_base items_center',
 
     //ボタンの内部構造のクエリ
@@ -53,7 +55,9 @@ const VideoData = {
         a: "<button style='width:200px;height:56px;color: var(--colors-action-text-on-tertiary-azure);background-color: var(--colors-action-base);border-radius: var(--radii-m)'",
         b: '"\'><b>',
         c: '</b>'
-    }
+    },
+
+
 
 }
 
@@ -115,6 +119,22 @@ class NicoDownloaderClass {
         this.DownloadFaultNum = 0;
         this.DownloadPercentage = 0;
 
+
+        //設定用
+        this.URL = ""
+
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * 設定をgithubより読み込む
+     */
+    ////////////////////////////////////////////////////////////////////////
+    async DownloadJson() {
+        if (video_sm == '') return false;
+        const url = this.NicoVideoWatchURL + video_sm + '?responseType=json';
+        return fetch(url).then(response => response.json());
     }
 
 
