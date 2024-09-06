@@ -36,7 +36,7 @@ const VideoData = {
     },
 
     // SystemMessageのクエリ
-    SystemMessageContainer: 'text_monotone.L80',
+    SystemMessageContainer: 'c_monotone.L80',
 
     // 設定ボタンのクエリ
     PlayerSettingQuery: '[aria-label="設定"]',
@@ -44,11 +44,8 @@ const VideoData = {
     // 設定ボタンのクラス名
     PlayerSettingClass: 'h_[calc(100vh_-_{sizes.commonHeader.inViewHeight}_-_{sizes.webHeader.height}_-_{spacing.x12})] max-h_[480px] rounded_m bg_layer.surfaceHighEm d_flex flex_column overflow_hidden shadow_base',
 
-    // SystemMessageのクラス名
-    SystemMessageClass: 'cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none [&_>_svg]:w_auto [&_>_svg]:h_x3 h_x3 [&_svg]:d_none',
-
     // SystemMessageのクエリ
-    SystemMessageQuery: '[class^="cursor_pointer d_inline-flex items_center justify_center gap_x0_5 px_x2 rounded_full fs_s fw_bold button-color_base white-space_nowrap select_none hover:cursor_pointer disabled:pointer-events_none"]',
+    SystemMessageQuery: '[class^="cursor_pointer d_inline-flex ai_center jc_center gap_x0_5 px_x2 bdr_full fs_s fw_bold button-color_base white-space_nowrap us_none hover:cursor_pointer disabled:pointer-events_none [&_>_svg]:w_auto [&_>_svg]:h_x3 h_x3 [&_svg]:d_none"]',
 
     // ダウンロードボタンのCSSとかHTML
     DLButton: {
@@ -121,21 +118,10 @@ class NicoDownloaderClass {
 
 
         //設定用
-        this.URL = ""
+        this.SettingJSONURL = "https://raw.githubusercontent.com/masteralice3104/nico_downloader/v4/setting_data/setting.json"
 
     }
 
-
-    ////////////////////////////////////////////////////////////////////////
-    /**
-     * 設定をgithubより読み込む
-     */
-    ////////////////////////////////////////////////////////////////////////
-    async DownloadJson() {
-        if (video_sm == '') return false;
-        const url = this.NicoVideoWatchURL + video_sm + '?responseType=json';
-        return fetch(url).then(response => response.json());
-    }
 
 
     ////////////////////////////////////////////////////////////////////////
