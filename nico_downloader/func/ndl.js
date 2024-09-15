@@ -105,7 +105,7 @@ class NicoDownloaderClass {
 
         //後で自ら設定しないといけない変数
         this.optionURL = '';// オプションページのURL
-        this.LangSetting = "ja"; // 言語
+        this.LangSetting = setOption("language_setting") || "ja"; // 言語
 
         this.M3u8 = {}; // m3u8の最初の内容
         this.TSURLs = []; // TSのURLリスト
@@ -116,9 +116,6 @@ class NicoDownloaderClass {
         this.DownloadFaultNum = 0;
         this.DownloadPercentage = 0;
 
-
-        //設定用
-        this.SettingJSONURL = "https://raw.githubusercontent.com/masteralice3104/nico_downloader/v4/setting_data/setting.json"
 
     }
 
@@ -731,6 +728,15 @@ class NicoDownloaderClass {
         this.SetM3u8(Key + "Body_json", this.Parsem3u8(this.M3u8[Key + "Body"]));//Firstm3u8のBodyをJSON形式に変換してセット
     }
 
+
+    ////////////////////////////////////////////////////////////////////////
+    /**
+     * m3u8からAudioM3u8URLとVideoM3u8URLをセットする
+     * @returns {Boolean}
+     * true:成功
+     * false:失敗
+    */
+    ////////////////////////////////////////////////////////////////////////
     M3u8ToAudioAndVideoUrlSet() {
 
         const audio_m3u8_URL = this.M3u8.FirstBody_json["EXT-X-MEDIA"][0]['URI'];

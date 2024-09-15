@@ -15,6 +15,7 @@ window.onload = function () {
             Options_view_select("video_autosave");
             Options_view_select("video_hlssave");
             Options_view_select("debug");
+            Options_view_select("language_setting");
         }
         save_flag = false;
     }, 10);
@@ -57,6 +58,8 @@ function Options_Save() {
     Option_setWritingByID("debug");
     Option_setWritingByID("video_autosave");
     Option_setWritingByID("video_hlssave"); //
+    Option_setWritingByID("language_setting");
+
 
     //保存日時
     let now = new Date();

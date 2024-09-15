@@ -8,6 +8,7 @@ LocalStorageで保存される値について
 "video_autosave"        0                   1だと自動で保存処理が走ります
 "video_hlssave"         0                   0だと初期設定、1だと低速、2だと高速モード
 "debug"                 0                   1だとデバッグ出力あり
+"language_setting"      ja                  言語設定
  */
 
 
@@ -73,7 +74,8 @@ function defalt_dataWrite() {
     Option_setWriting("video_pattern", "sm[0-9]{1,}");
     Option_setWriting("video_autosave", "0");
     Option_setWriting("debug", "0");
-    Option_setWriting("video_hlssave", "0")
+    Option_setWriting("video_hlssave", "0");
+    Option_setWriting("language_setting", "ja");
     Options_Save();
 }
 
@@ -87,6 +89,7 @@ function Options_onload() {
         LoadOption("video_autosave");
         LoadOption("video_hlssave");
         LoadOption("debug");
+        LoadOption("language_setting");
     } catch (error) {
         Default_click();
         Options_Save();
