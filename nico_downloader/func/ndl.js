@@ -81,7 +81,21 @@ class NicoDownloaderClass {
             "を保存": "を保存",
             "処理中": "処理中",
             "保存完了": "保存完了",
+            "まもなく保存完了": "まもなく保存完了",
             "をダウンロード": "をダウンロード",
+            "ダウンロード中": "ダウンロード中",
+        },
+        "en": {
+            "処理開始": "Processing start",
+            "MainVideoPlayerが読み込めません": "MainVideoPlayer can't be loaded",
+            "要初期設定": "Please set up nico downloader",
+            "設定画面を開く": "Open setting page",
+            "を保存": " Save",
+            "処理中": " Processing",
+            "保存完了": " Saved",
+            "まもなく保存完了": " Saved soon",
+            "をダウンロード": " Download",
+            "ダウンロード中": " Downloading",
         }
     }
 
@@ -111,6 +125,8 @@ class NicoDownloaderClass {
         this.TSURLs = []; // TSのURLリスト
         this.TSFilenames = []; // TSのファイル名リスト
         this.VideoFormat = "";//動画の拡張子
+        this.FSOutputFileName = "";//ファイルシステムに出力するファイル名
+        //↑NicovideoClass.video_nameとは全く違います！↑
 
         //ダウンロード中用変数
         this.DownloadFaultNum = 0;
@@ -752,7 +768,7 @@ class NicoDownloaderClass {
 
     ////////////////////////////////////////////////////////////////////////
     /**
-     * video_nameから末尾にある拡張子のみ抽出し、formatに代入する
+     * video_nameから末尾にある拡張子のみ抽出
      * @param {String} video_name 
      * @returns {String} format
      */
@@ -849,6 +865,39 @@ class NicoDownloaderClass {
     DownloadPercentageGet() {
         return this.DownloadPercentage;
     }
+
+
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ファイルシステムに出力するファイル名をセット
+     * @param {NicovideoClass} Nicovideo
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////
+    FSOutputFileNameSet(Nicovideo) {
+        this.FSOutputFileName = Nicovideo.video_sm + "." + this.CheckVideoFormat() || "mp4";
+    }
+
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ファイルシステムに出力するファイル名をリセット
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////
+    FSOutputFileNameReset() {
+        this.FSOutputFileName = "";
+    }
+
+    ////////////////////////////////////////////////////////////////
+    /**
+     * ファイルシステムに出力するファイル名を取得
+     * @returns {String} ファイルシステムに出力するファイル名
+    */
+    ////////////////////////////////////////////////////////////////
+    FSOutputFileNameGet() {
+        return this.FSOutputFileName;
+    }
+
 
 }
 

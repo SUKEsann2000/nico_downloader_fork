@@ -24,44 +24,69 @@ const ffmpeg = (Core, args) => {
   );//https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts
 };
 
-const runFFmpeg = async (Core, video_sm, ofilename) => {
+/**
+ * m3u8を変換する
+ * @param {Core} Core 
+ * @param {String} m3u8name 
+ * @param {NicoDownloaderClass} NicoDownloader
+ * @param {NicovideoClass} Nicovideo 
+ */
+const runFFmpeg_m3u8 = async (Core, m3u8name, NicoDownloader, Nicovideo) => {
   let resolve = null;
+
+
+
+  //出力ファイル名
+  NicoDownloader.FSOutputFileNameSet(Nicovideo);
+
+
+  //終了を待つためのPromise
   const waitEnd = new Promise((r) => {
     resolve = r;
   });
+
+  //終了時にresolve
   try {
-    documentWriteText("ファイルの結合中");
-    ffmpeg(Core, ['-f', 'concat', '-i', video_sm + ".txt", "-c", "copy", ofilename]);
-    //ffmpeg(Core, ['-f', 'concat', '-r', fps, '-i', video_sm + ".txt", '-r', fps, ofilename]);//可変FPSなのでfps入れるとおかしくなる
+    //日本語が入っているとタグが変になるのでエンコード
+    const title_str = unescape(encodeURIComponent(Nicovideo.video_title));
+    const timestamp_str = unescape(encodeURIComponent(Nicovideo.video_registeredAt));
+    const username_str = unescape(encodeURIComponent(Nicovideo.video_owner));
+    const description_str = unescape(encodeURIComponent(Nicovideo.video_description));
 
+    const genre_str = unescape(encodeURIComponent(Nicovideo.video_genre));
+    const series_str = unescape(encodeURIComponent(Nicovideo.video_series));
 
-    //m3u8入れるとこれ？
-    //ffmpeg(Core, ['-i', video_sm + ".m3u8", "-c", "copy", ofilename]);
+    //ffmpeg実行
+    ffmpeg(Core,
+      [
+        '-allowed_extensions', 'ALL',
+        '-i', m3u8name,
+        "-metadata", `title=${title_str}`, // タイトル
+        "-metadata", `show=${title_str}`, // タイトル
+        "-metadata", `creation_time=${timestamp_str}`, // 登録日時
+        "-metadata", `date=${timestamp_str}`, // 登録日時
+        "-metadata", `artist=${username_str}`, // 投稿ユーザー
+        "-metadata", `description=${description_str}`, // 説明
+        "-metadata", `comment=${description_str}`, // 説明
+        "-metadata", `genre=${genre_str}`, // ジャンル
+        "-metadata", `publisher=nicovideo.jp`, // パブリッシャー
+        "-metadata", `episode_id=${Nicovideo.video_sm}`, // 動画ID
+        "-metadata", `album=${series_str}`, // シリーズ
+        "-metadata", `album_artist=${username_str}`, // 投稿ユーザー
+        "-c", "copy",
+        NicoDownloader.FSOutputFileNameGet(),
+      ]);//ここをcopyでやらないと変換速度がx0.1とかになる
 
-    //ここをcopyでやらないと変換速度がx0.1とかになる
   } catch (err) {
-    DebugPrint("FFmpeg:" + err);
-  };
-  await waitEnd;
-  DebugPrint("waitEnd");
 
-};
-
-const runFFmpeg_m3u8 = async (Core, m3u8name, ofilename) => {
-  let resolve = null;
-  const waitEnd = new Promise((r) => {
-    resolve = r;
-  });
-  try {
-
-    //m3u8入れるとこれ？
-    ffmpeg(Core, ['-allowed_extensions', 'ALL', '-i', m3u8name, "-c", "copy", ofilename]);
-
-    //ここをcopyでやらないと変換速度がx0.1とかになる
-  } catch (err) {
+    //エラーが出たら
     DebugPrint("runFFmpeg:" + err);
   };
+
+  //終了を待つ
   await waitEnd;
+
+  //終了後
   DebugPrint("waitEnd");
 
 };
@@ -119,51 +144,54 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
 
   //https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts  //偉大なる@_naari_氏による協力に感謝いたします
   let file = null;
-  const core = await createFFmpegCore({
-    printErr: (e) => DebugPrint(`FFMPEG:${e}`),
-    print: (e) => {
-      DebugPrint(`FFMPEG: ${e}`);
-      if (e.startsWith("FFMPEG_END")) {
-        DebugPrint("FFMPEG_END 変換終了");
-        if (last_save_sm !== Nicovideo.video_sm) {
-          last_save_sm = Nicovideo.video_sm;
-          const ofilename = Nicovideo.video_sm + "." + NicoDownloader.CheckVideoFormat();
-          file = core.FS.readFile(ofilename);
-          console.log({ file });
-          core.FS.unlink(ofilename);
-
-          //blob
-          const blob = new Blob(
-            [file.buffer],
-            {
-              type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
-            });
+  const core = await createFFmpegCore(
+    {
+      printErr: (e) => DebugPrint(`FFMPEG:${e}`),
+      print: (e) => {
+        DebugPrint(`FFMPEG: ${e}`);
+        if (e.startsWith("FFMPEG_END")) {
+          DebugPrint("FFMPEG_END 変換終了");
+          if (last_save_sm !== Nicovideo.video_sm) {
+            last_save_sm = Nicovideo.video_sm;
+            NicoDownloader.FSOutputFileNameSet(Nicovideo);
 
 
-          //ダウンロード
-          const a = document.createElement('a');
-          a.id = VideoData.Video_DLlink.a2;
-          document.body.appendChild(a);
+            file = core.FS.readFile(NicoDownloader.FSOutputFileNameGet());
+            console.log({ file });
+            core.FS.unlink(NicoDownloader.FSOutputFileNameGet());
 
-          const link = document.getElementById(VideoData.Video_DLlink.a2);
-          link.href = URL.createObjectURL(blob);
-          link.download = Nicovideo.video_name;
-
-          link.style.display = 'none';
-
-          document.body.click();
-
-          NicoDownloader.ButtonTextWrite("まもなく保存完了");
+            //blob
+            const blob = new Blob(
+              [file.buffer],
+              {
+                type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
+              });
 
 
+            //ディスクへの保存処理
+            const a = document.createElement('a');
+            a.id = VideoData.Video_DLlink.a2;
+            document.body.appendChild(a);
 
-        } else {
-          NicoDownloader.ButtonTextWrite("まもなく保存完了");
+            const link = document.getElementById(VideoData.Video_DLlink.a2);
+            link.href = URL.createObjectURL(blob);
+            link.download = Nicovideo.video_name;
+
+            link.style.display = 'none';
+
+            document.body.click();
+
+            NicoDownloader.ButtonTextWrite("まもなく保存完了");
+
+
+
+          } else {
+            NicoDownloader.ButtonTextWrite("まもなく保存完了");
+          }
+
         }
-
-      }
-    },
-  });
+      },
+    });
   console.debug({ core });
 
   //URLsを片っ端から処理
@@ -182,18 +210,27 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
           core.FS.writeFile(filename, byte);
           DebugPrint("FSwrite:" + filename);
 
+          //ダウンロードパーセンテージを計算
           const downpercentage = 100 * filenumber / NicoDownloader.TSURLs.length;
           if (downpercentage > NicoDownloader.DownloadPercentageGet()) {
             NicoDownloader.DownloadPercentageSet(downpercentage);
           }
-          let text_dl = "ダウンロード中…… (" + NicoDownloader.DownloadPercentageGet().toFixed(1) + "%)";
+
+          //ダウンロード中のテキストを書き換え
+          let text_dl = NicoDownloader.LangText("ダウンロード中") + "…… (" + NicoDownloader.DownloadPercentageGet().toFixed(1) + "%)";
+
+          //ダウンロードエラー数がある場合はエラー発生の●を表示
           if (NicoDownloader.DownloadFaultNumCheck() != 0) {
             text_dl += "●";
           }
 
+          //ボタンのテキストを書き換え
           NicoDownloader.ButtonTextWrite(text_dl);
 
+
           DebugPrint("180: " + core.FS.stat(filename));
+
+          //最後のファイルの場合はresolve
           resolve(filename);
         });
 
@@ -229,7 +266,7 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
     NicoDownloader.ButtonTextWrite('結合処理中');
 
 
-    Transcode(core, Nicovideo.video_sm, m3u8name, NicoDownloader).then(() => {
+    Transcode(core, m3u8name, NicoDownloader, Nicovideo).then(() => {
       NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
     });
   });
@@ -269,12 +306,18 @@ async function DownloadUint8Array(url, NicoDownloader) {
   return byte;
 }
 
-const Transcode = async function (Core, video_sm, m3u8name, NicoDownloader) {
-  const outputvideo_name = video_sm + "." + NicoDownloader.CheckVideoFormat();
+/**
+ * 変換処理してファイルを返す
+ * @param {Core} Core 
+ * @param {String} m3u8name 
+ * @param {NicoDownloaderClass} NicoDownloader 
+ * @param {NicovideoClass} Nicovideo 
+ * @returns 
+ */
+async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
 
   NicoDownloader.ButtonTextWrite("変換中……");
-  //const { file } = await runFFmpeg(Core, video_sm, outputvideo_name, fps);
-  const { file } = await runFFmpeg_m3u8(Core, m3u8name, outputvideo_name);
+  const { file } = await runFFmpeg_m3u8(Core, m3u8name, NicoDownloader, Nicovideo);
   return file;
 };
 

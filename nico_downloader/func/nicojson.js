@@ -28,6 +28,12 @@ class NicovideoClass {
         this.mylist_count = 0; // マイリスト数
         this.like_count = 0; // いいね数
         this.video_title = ''; // タイトル
+        this.video_owner = ''; // 投稿ユーザー
+        this.video_registeredAt = ''; // 登録日時
+        this.video_description = ''; // 説明文
+        this.video_tags = []; // タグ
+        this.video_genre = ''; // ジャンル
+        this.video_series = ''; // シリーズ
 
         //後で自ら設定しないといけない変数
         this.video_name = "";// 動画の保存名
@@ -93,9 +99,16 @@ class NicovideoClass {
         this.mylist_count = this.JsonToMylistCount(json);
         this.like_count = this.JsonToLikeCount(json);
         this.video_title = this.JsonToTitle(json);
+        this.video_owner = this.JsonToUser(json);
+        this.video_registeredAt = this.JsonToRegisteredAt(json);
+        this.video_description = this.JsonToDescription(json);
+        this.video_tags = this.JsonToTags(json);
+        this.video_genre = this.JsonToGenre(json);
+        this.video_series = this.JsonToSeries(json);
     }
 
 
+    //URLから動画idを取得
     VideoSmGet(match_sm) {
         let video_sm = '';
         if (location.href.match(match_sm)) {
@@ -133,6 +146,37 @@ class NicovideoClass {
     //jsonよりidを取得
     JsonToId(json = this.json) {
         return json.data.response.video.id; // id
+    }
+    //jsonより登録日時を取得
+    JsonToRegisteredAt(json = this.json) {
+        return json.data.response.video.registeredAt; // 登録日時
+    }
+    //jsonより投稿ユーザー名を取得
+    JsonToUser(json = this.json) {
+        return json.data.response.owner.nickname; // 投稿ユーザー名
+    }
+    //jsonより説明文を取得
+    JsonToDescription(json = this.json) {
+        return json.data.response.video.description; // 説明文
+    }
+
+    //jsonよりタグを取得
+    JsonToTags(json = this.json) {
+        let tags = [];
+        for (let i = 0; i < json.data.response.tag.items[i].length; i++) {
+            tags.push(json.data.response.tag.items[i].name);
+        }
+        return tags;
+    }
+
+    //jsonよりジャンルを取得
+    JsonToGenre(json = this.json) {
+        return json.data.response.genre.label; // ジャンル
+    }
+
+    //jsonよりシリーズを取得
+    JsonToSeries(json = this.json) {
+        return json.data.response.series.title; // シリーズ
     }
 
     //変数の中身が適正なデータかチェックする関数

@@ -2,6 +2,12 @@
 
 nico downloader：ニコニコ用のシンプルなChrome拡張
 
+**Chrome Webストアで公開されています！**
+
+**https://chromewebstore.google.com/detail/nico-downloader/dncjcadpoakefjpnabimpalenliehbig**
+
+---
+
 - [nico downloader](#nico-downloader)
   - [コンセプト](#コンセプト)
   - [おことわりと怒りの表明](#おことわりと怒りの表明)
@@ -70,7 +76,7 @@ nico downloader：ニコニコ用のシンプルなChrome拡張
 | 4. ダウンロードしようとしたら1KBになりました。バグらささっていると思います。                           | 十中八九変換に失敗しています。<br>原因の一例<br>・PCのメモリが足りない(要件を読んで下さい)<br>・回線の問題でダウンロードに失敗した(要件を読んで下さい)<br>・動画が暗号化されている(おことわりを読んで下さい)<br>・動画が長すぎる(特に3時間以上)                                                                                           |
 | 5. バグを発見した                                                                                      | Issuesを立ててください                                                                                                                                                                                                                                                                                                                    |
 | 6. Plz, I've Question by ENG or other...                                                               | I understand "Japanese". But I can't understand enough ENG. ------ I'd confirmed that DeepL translation and Google Translate don't correctly translate the dialect I talk. These sentence is also likely to be incorrect. Therefore, if you and I use a translator, our intentions would may be conveyed incorrectly. So I can't respond. |
-| 7. 多言語対応してほしい                                                                                | 一応多言語対応できる状態になっています。                                                                                                                                                                                                                                                                                                  |
+| 7. 多言語対応してほしい                                                                                | 一応多言語対応できる状態になっていますがそもそも正しい翻訳なのかかなり怪しい状況です                                                                                                                                                                                                                                                      |
 | 8. 「あ、　nico downloaderの現状、不具合、リリースノートなどはこちらから　のリンク先がなくなってます」 | 直しました。2024.9.16                                                                                                                                                                                                                                                                                                                     |
 
 ## 非常に雑なリリースノート
@@ -90,10 +96,11 @@ nico downloader：ニコニコ用のシンプルなChrome拡張
 | 4.0.0.0      | 2023.12.3  | 大規模なリファクタリングにて再構築                    |
 | 4.1.0.0      | 2024.8.5   | リファクタリング                                      |
 | 5.0.0.0      | 2024.8.5   | 帰ってきたニコニコ対応                                |
-| 5.0.0.1      | 2024.8.7   | 保存時メモリを大量に使う使う問題に対処                |
+| 5.0.0.1      | 2024.8.7   | 保存時メモリを大量に使う問題に対処                    |
 | 5.0.0.2      | 2024.8.7   | 二重ダウンロードされることがある問題に対処            |
 | 5.0.0.3      | 2024.8.10  | 初期設定モードの説明が変なことになっていたのを修正    |
 | 5.0.0.4      | 2024.8.11  | リファクタリング                                      |
 | 5.0.0.5      | 2024.8.11  | オプション画面を書き換え                              |
 | 5.0.0.6      | 2024.9.6   | 誤字修正、ニコニコの動画ページ変更追従                |
 | 5.0.0.7      | 2024.9.16  | 多言語対応の設定を追加<br>オプションページの変更      |
+| 5.0.0.8      | 2024.9.    | 保存された動画への一部メタタグの追加                  |
