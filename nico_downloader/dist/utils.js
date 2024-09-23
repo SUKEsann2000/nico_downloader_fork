@@ -3,7 +3,7 @@
 //LGPL
 
 let last_save_sm = "";
-let last_save_sm_URI = "";
+
 
 const parseArgs = (Core, args) => {
   const argsPtr = Core._malloc(args.length * Uint32Array.BYTES_PER_ELEMENT);
@@ -15,6 +15,7 @@ const parseArgs = (Core, args) => {
   return [args.length, argsPtr];
 };
 
+// ffmpegの実行
 const ffmpeg = (Core, args) => {
   Core.ccall(
     "main",
@@ -24,6 +25,7 @@ const ffmpeg = (Core, args) => {
   );//https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts
 };
 
+////////////////////////////////////////////////////////////////
 /**
  * m3u8を変換する
  * @param {Core} Core 
@@ -31,6 +33,7 @@ const ffmpeg = (Core, args) => {
  * @param {NicoDownloaderClass} NicoDownloader
  * @param {NicovideoClass} Nicovideo 
  */
+////////////////////////////////////////////////////////////////
 const runFFmpeg_m3u8 = async (Core, m3u8name, NicoDownloader, Nicovideo) => {
   let resolve = null;
 
@@ -150,6 +153,9 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
       print: (e) => {
         DebugPrint(`FFMPEG: ${e}`);
         if (e.startsWith("FFMPEG_END")) {
+          // FFMPEG_ENDで終了
+          //終了時の処理
+          NicoDownloader.ButtonTextWrite("変換終了");
           DebugPrint("FFMPEG_END 変換終了");
           if (last_save_sm !== Nicovideo.video_sm) {
             last_save_sm = Nicovideo.video_sm;
@@ -164,6 +170,7 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
             const blob = new Blob(
               [file.buffer],
               {
+                //MIMEタイプを設定
                 type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
               });
 
@@ -275,12 +282,14 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
 
 }
 
+////////////////////////////////////////////////////////////////////////
 /**
  * URLからダウンロードし、Blobを返す
  * @param {String} url ダウンロードするURL
  * @param {NicoDownloaderClass} NicoDownloader
  * @returns {Object} Blob
  */
+////////////////////////////////////////////////////////////////////////
 async function Downloadblob(url, NicoDownloader) {
 
   //TSの取得
@@ -291,12 +300,14 @@ async function Downloadblob(url, NicoDownloader) {
   return blob;
 };
 
+////////////////////////////////////////////////////////////////////////
 /**
  * URLからダウンロードし、Uint8Arrayを返す
  * @param {String} url ダウンロードするURL
  * @param {NicoDownloaderClass} NicoDownloader
  * @returns {Object} Uint8Array
  */
+////////////////////////////////////////////////////////////////////////
 async function DownloadUint8Array(url, NicoDownloader) {
   let blob = await Downloadblob(url, NicoDownloader);
   let byte = null;
@@ -306,23 +317,34 @@ async function DownloadUint8Array(url, NicoDownloader) {
   return byte;
 }
 
+////////////////////////////////////////////////////////////////////////
 /**
  * 変換処理してファイルを返す
  * @param {Core} Core 
  * @param {String} m3u8name 
  * @param {NicoDownloaderClass} NicoDownloader 
  * @param {NicovideoClass} Nicovideo 
- * @returns 
+ * @returns {Object} file
  */
+////////////////////////////////////////////////////////////////////////
 async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
 
-  NicoDownloader.ButtonTextWrite("変換中……");
+  NicoDownloader.ButtonTextWrite("変換中");
   const { file } = await runFFmpeg_m3u8(Core, m3u8name, NicoDownloader, Nicovideo);
   return file;
 };
 
-//https://qiita.com/ksakiyama134/items/8cfb0cf96d8f7c7be5b3
-const fetch_retry = async (url, NicoDownloader, options, n) => {
+////////////////////////////////////////////////////////////////////////
+/**
+ * リトライ処理を含めたfetch　https://qiita.com/ksakiyama134/items/8cfb0cf96d8f7c7be5b3
+ * @param {String} url ダウンロードするURL
+ * @param {NicoDownloaderClass} NicoDownloader
+ * @param {Object} options fetchのオプション
+ * @param {Number} n リトライ回数
+ * @returns {Object} fetch
+ */
+////////////////////////////////////////////////////////////////////////
+async function fetch_retry(url, NicoDownloader, options, n) {
   try {
     DebugPrint('fetchurl: ' + url);
     let fetched = await fetch(url, options);
@@ -343,8 +365,12 @@ const fetch_retry = async (url, NicoDownloader, options, n) => {
   }
 };
 
-
-//https://www.sejuku.net/blog/24629
+////////////////////////////////////////////////////////////////////////
+/**
+ * スリープ関数　https://www.sejuku.net/blog/24629
+ * @param {Number} waitMsec スリープ時間
+ */
+////////////////////////////////////////////////////////////////////////
 function sleep(waitMsec) {
   var startMsec = new Date();
 
