@@ -141,7 +141,7 @@ class NicovideoClass {
     }
     //jsonよりタイトルを取得
     JsonToTitle(json = this.json) {
-        return json.data.response.video.title; // タイトル
+        return json.data.response.video.title || ""; // タイトル
     }
     //jsonよりidを取得
     JsonToId(json = this.json) {
@@ -153,10 +153,12 @@ class NicovideoClass {
     }
     //jsonより投稿ユーザー名を取得
     JsonToUser(json = this.json) {
+        if (json.data.response.owner.nickname == null) return "";
         return json.data.response.owner.nickname; // 投稿ユーザー名
     }
     //jsonより説明文を取得
     JsonToDescription(json = this.json) {
+        if (json.data.response.video.description == null) return "";
         return json.data.response.video.description; // 説明文
     }
 
@@ -171,11 +173,13 @@ class NicovideoClass {
 
     //jsonよりジャンルを取得
     JsonToGenre(json = this.json) {
+        if (json.data.response.genre == null) return "";
         return json.data.response.genre.label; // ジャンル
     }
 
     //jsonよりシリーズを取得
     JsonToSeries(json = this.json) {
+        if (json.data.response.series == null) return "";
         return json.data.response.series.title; // シリーズ
     }
 
