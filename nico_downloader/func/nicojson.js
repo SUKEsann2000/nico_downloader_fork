@@ -125,26 +125,32 @@ class NicovideoClass {
 
     //jsonより再生数を取得
     JsonToViewCount(json = this.json) {
+        if (json.data.response.video.count.view == null) return 0;
         return json.data.response.video.count.view;// 再生数
     }
     //jsonよりコメント数を取得
     JsonToCommentCount(json = this.json) {
+        if (json.data.response.video.count.comment == null) return 0;
         return json.data.response.video.count.comment;// コメント数
     }
     //jsonよりマイリスト数を取得
     JsonToMylistCount(json = this.json) {
+        if (json.data.response.video.count.mylist == null) return 0;
         return json.data.response.video.count.mylist;// マイリスト数
     }
     //jsonよりいいね数を取得
     JsonToLikeCount(json = this.json) {
+        if (json.data.response.video.count.like == null) return 0;
         return json.data.response.video.count.like; // いいね数
     }
     //jsonよりタイトルを取得
     JsonToTitle(json = this.json) {
-        return json.data.response.video.title || ""; // タイトル
+        if (json.data.response.video.title == null) return "";
+        return json.data.response.video.title; // タイトル
     }
     //jsonよりidを取得
     JsonToId(json = this.json) {
+        if (json.data.response.video.id == null) return "";
         return json.data.response.video.id; // id
     }
     //jsonより登録日時を取得
@@ -153,7 +159,7 @@ class NicovideoClass {
     }
     //jsonより投稿ユーザー名を取得
     JsonToUser(json = this.json) {
-        if (json.data.response.owner.nickname == null) return "";
+        if (json.data.response.owner == null) return "";
         return json.data.response.owner.nickname; // 投稿ユーザー名
     }
     //jsonより説明文を取得
