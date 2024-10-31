@@ -4,13 +4,12 @@
 
 let last_save_sm = "";
 
-
 const parseArgs = (Core, args) => {
   const argsPtr = Core._malloc(args.length * Uint32Array.BYTES_PER_ELEMENT);
   args.forEach((s, idx) => {
     const buf = Core._malloc(s.length + 1);
     Core.writeAsciiToMemory(s, buf);
-    Core.setValue(argsPtr + (Uint32Array.BYTES_PER_ELEMENT * idx), buf, 'i32');
+    Core.setValue(argsPtr + Uint32Array.BYTES_PER_ELEMENT * idx, buf, "i32");
   });
   return [args.length, argsPtr];
 };
@@ -19,29 +18,30 @@ const parseArgs = (Core, args) => {
 const ffmpeg = (Core, args) => {
   Core.ccall(
     "main",
-    'number',
-    ['number', 'number'],
-    parseArgs(Core, ['ffmpeg', '-nostdin', ...args]),
-  );//https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts
+    "number",
+    ["number", "number"],
+    parseArgs(Core, ["ffmpeg", "-nostdin", ...args])
+  ); //https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts
 };
 
 ////////////////////////////////////////////////////////////////
 /**
  * m3u8を変換する
- * @param {Core} Core 
- * @param {String} m3u8name 
+ * @param {Core} Core
+ * @param {String} m3u8name
  * @param {NicoDownloaderClass} NicoDownloader
- * @param {NicovideoClass} Nicovideo 
+ * @param {NicovideoClass} Nicovideo
+ * @param {String} mode
  */
 ////////////////////////////////////////////////////////////////
-const runFFmpeg_m3u8 = async (Core, m3u8name, NicoDownloader, Nicovideo) => {
+const runFFmpeg_m3u8 = async (
+  Core,
+  m3u8name,
+  NicoDownloader,
+  Nicovideo,
+  mode = "mp4"
+) => {
   let resolve = null;
-
-
-
-  //出力ファイル名
-  NicoDownloader.FSOutputFileNameSet(Nicovideo);
-
 
   //終了を待つためのPromise
   const waitEnd = new Promise((r) => {
@@ -52,46 +52,75 @@ const runFFmpeg_m3u8 = async (Core, m3u8name, NicoDownloader, Nicovideo) => {
   try {
     //日本語が入っているとタグが変になるのでエンコード
     const title_str = unescape(encodeURIComponent(Nicovideo.video_title));
-    const timestamp_str = unescape(encodeURIComponent(Nicovideo.video_registeredAt));
+    const timestamp_str = unescape(
+      encodeURIComponent(Nicovideo.video_registeredAt)
+    );
     const username_str = unescape(encodeURIComponent(Nicovideo.video_owner));
-    const description_str = unescape(encodeURIComponent(Nicovideo.video_description));
+    const description_str = unescape(
+      encodeURIComponent(Nicovideo.video_description)
+    );
 
     const genre_str = unescape(encodeURIComponent(Nicovideo.video_genre));
     const series_str = unescape(encodeURIComponent(Nicovideo.video_series));
 
+    NicoDownloader.FSOutputFileNameSet(Nicovideo);
+    let outputFileName = NicoDownloader.FSOutputFileNameGet();
+
+    // ファイル名の拡張子をモードに基づき変更
+    if (mode === "aac" && outputFileName.endsWith(".mp4")) {
+      outputFileName = outputFileName.replace(/\.mp4$/, ".aac");
+    } else if (mode === "aac") {
+      outputFileName += ".aac"; // 拡張子がない場合に .aac を追加
+    }
+    NicoDownloader.OutputFileNameSet(Nicovideo,outputFileName);
+    DebugPrint(`Initial OutputFileNameSet: ${NicoDownloader.FSOutputFileNameGet()}`);
+
     //ffmpeg実行
-    ffmpeg(Core,
-      [
-        '-allowed_extensions', 'ALL',
-        '-i', m3u8name,
-        "-metadata", `title=${title_str}`, // タイトル
-        "-metadata", `show=${title_str}`, // タイトル
-        "-metadata", `creation_time=${timestamp_str}`, // 登録日時
-        "-metadata", `date=${timestamp_str}`, // 登録日時
-        "-metadata", `artist=${username_str}`, // 投稿ユーザー
-        "-metadata", `description=${description_str}`, // 説明
-        "-metadata", `comment=${description_str}`, // 説明
-        "-metadata", `genre=${genre_str}`, // ジャンル
-        "-metadata", `publisher=nicovideo.jp`, // パブリッシャー
-        "-metadata", `episode_id=${Nicovideo.video_sm}`, // 動画ID
-        "-metadata", `album=${series_str}`, // シリーズ
-        "-metadata", `album_artist=${username_str}`, // 投稿ユーザー
-        "-c", "copy",
-        NicoDownloader.FSOutputFileNameGet(),
-      ]);//ここをcopyでやらないと変換速度がx0.1とかになる
-
+    ffmpeg(Core, [
+      "-allowed_extensions",
+      "ALL",
+      "-i",
+      m3u8name,
+      "-metadata",
+      `title=${title_str}`, // タイトル
+      "-metadata",
+      `show=${title_str}`, // タイトル
+      "-metadata",
+      `creation_time=${timestamp_str}`, // 登録日時
+      "-metadata",
+      `date=${timestamp_str}`, // 登録日時
+      "-metadata",
+      `artist=${username_str}`, // 投稿ユーザー
+      "-metadata",
+      `description=${description_str}`, // 説明
+      "-metadata",
+      `comment=${description_str}`, // 説明
+      "-metadata",
+      `genre=${genre_str}`, // ジャンル
+      "-metadata",
+      `publisher=nicovideo.jp`, // パブリッシャー
+      "-metadata",
+      `episode_id=${Nicovideo.video_sm}`, // 動画ID
+      "-metadata",
+      `album=${series_str}`, // シリーズ
+      "-metadata",
+      `album_artist=${username_str}`, // 投稿ユーザー
+      ...(mode === "aac"
+        ? ["-vn", "-c:a", "copy"] // aacモードで最初のオーディオストリームを選択
+        : ["-c", "copy"]), // MP4モードでオーディオ・ビデオをコピー
+      outputFileName,
+    ]);
+    DebugPrint(`ffmpeg called with args: ${ffmpegArgs.join(" ")}`);
   } catch (err) {
-
     //エラーが出たら
     DebugPrint("runFFmpeg:" + err);
-  };
+  }
 
   //終了を待つ
   await waitEnd;
 
   //終了後
   DebugPrint("waitEnd");
-
 };
 
 /**
@@ -101,7 +130,7 @@ const runFFmpeg_m3u8 = async (Core, m3u8name, NicoDownloader, Nicovideo) => {
  * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
  * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types
  * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
-  */
+ */
 function FiletypeToMimetype(filetype) {
   switch (filetype) {
     case "mp4":
@@ -112,6 +141,8 @@ function FiletypeToMimetype(filetype) {
       return "audio/mpeg";
     case "webm":
       return "video/webm";
+    case "aac":
+      return "audio/aac";
     default:
       return "video/mp4";
   }
@@ -120,97 +151,87 @@ function FiletypeToMimetype(filetype) {
 //ここから追記
 /**
  * ダウンロードし変換する関数
- * @param {NicoDownloaderClass} NicoDownloader 
- * @param {Array} m3u8s 
+ * @param {NicoDownloaderClass} NicoDownloader
+ * @param {Array} m3u8s
  * @param {NicovideoClass} Nicovideo
- * @returns 
+ * @returns
  */
 async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
-
-  NicoDownloader.SetVideoFormat(Nicovideo.video_name);//フォーマットをセット
-  if (NicoDownloader.CheckVideoFormat() == false) return false;//フォーマットをチェック
-
+  NicoDownloader.SetVideoFormat(Nicovideo.video_name); //フォーマットをセット
+  if (NicoDownloader.CheckVideoFormat() == false) return false; //フォーマットをチェック
 
   //ダウンロード前のチェック処理
-  if (NicoDownloader.VideoDownloadingCheck()) {//ダウンロード中は終了
+  if (NicoDownloader.VideoDownloadingCheck()) {
+    //ダウンロード中は終了
     return false;
   } else {
-    NicoDownloader.VideoDownloadingSet();//ダウンロード中フラグを立てる
+    NicoDownloader.VideoDownloadingSet(); //ダウンロード中フラグを立てる
   }
 
-  NicoDownloader.DownloadFaultNumReset();//ダウンロードエラー数をリセット
+  NicoDownloader.DownloadFaultNumReset(); //ダウンロードエラー数をリセット
 
-  NicoDownloader.DownloadPercentageReset();//パーセンテージをリセット
-
-
-
+  NicoDownloader.DownloadPercentageReset(); //パーセンテージをリセット
 
   //https://github.com/naari3/nico-downloader-ffmpeg/blob/main/src/background.ts  //偉大なる@_naari_氏による協力に感謝いたします
   let file = null;
-  const core = await createFFmpegCore(
-    {
-      printErr: (e) => DebugPrint(`FFMPEG:${e}`),
-      print: (e) => {
-        DebugPrint(`FFMPEG: ${e}`);
-        if (e.startsWith("FFMPEG_END")) {
-          // FFMPEG_ENDで終了
-          //終了時の処理
-          NicoDownloader.ButtonTextWrite("変換終了");
-          DebugPrint("FFMPEG_END 変換終了");
-          if (last_save_sm !== Nicovideo.video_sm) {
+  const core = await createFFmpegCore({
+    printErr: (e) => DebugPrint(`FFMPEG:${e}`),
+    print: (e) => {
+      DebugPrint(`FFMPEG: ${e}`);
+      if (e.startsWith("FFMPEG_END")) {
+        // FFMPEG_ENDで終了
+        //終了時の処理
+        NicoDownloader.ButtonTextWrite("変換終了");
+        DebugPrint("FFMPEG_END 変換終了");
+        if (last_save_sm !== Nicovideo.video_sm) {
+          try {
             last_save_sm = Nicovideo.video_sm;
-            NicoDownloader.FSOutputFileNameSet(Nicovideo);
-
+            //NicoDownloader.FSOutputFileNameSet(Nicovideo);
 
             file = core.FS.readFile(NicoDownloader.FSOutputFileNameGet());
             console.log({ file });
             core.FS.unlink(NicoDownloader.FSOutputFileNameGet());
 
             //blob
-            const blob = new Blob(
-              [file.buffer],
-              {
-                //MIMEタイプを設定
-                type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
-              });
-
+            const blob = new Blob([file.buffer], {
+              //MIMEタイプを設定
+              type: FiletypeToMimetype(NicoDownloader.CheckVideoFormat()),
+            });
 
             //ディスクへの保存処理
-            const a = document.createElement('a');
+            const a = document.createElement("a");
+            const fileName = Nicovideo.video_name;
+
             a.id = VideoData.Video_DLlink.a2;
             document.body.appendChild(a);
 
             const link = document.getElementById(VideoData.Video_DLlink.a2);
             link.href = URL.createObjectURL(blob);
-            link.download = Nicovideo.video_name;
+            link.download = fileName;
 
-            link.style.display = 'none';
+            link.style.display = "none";
 
             document.body.click();
 
             NicoDownloader.ButtonTextWrite("まもなく保存完了");
-
-
-
-          } else {
-            NicoDownloader.ButtonTextWrite("まもなく保存完了");
+          } catch (e) {
+            console.error("Error:FaildedToBlob\n", e);
           }
-
+        } else {
+          NicoDownloader.ButtonTextWrite("まもなく保存完了");
         }
-      },
-    });
+      }
+    },
+  });
   console.debug({ core });
 
   //URLsを片っ端から処理
   //落としてファイルシステムにいれていく
   let promises = [];
   for (let i = 0; i < NicoDownloader.TSURLs.length; i++) {
-
     const promise = new Promise((resolve, reject) => {
-
-
-      DownloadUint8Array(NicoDownloader.TSURLs[i], NicoDownloader)
-        .then(byte => {
+      DownloadUint8Array(NicoDownloader.TSURLs[i], NicoDownloader).then(
+        (byte) => {
           let filenumber = i + 1;
 
           let filename = NicoDownloader.TSFilenames[i];
@@ -218,13 +239,18 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
           DebugPrint("FSwrite:" + filename);
 
           //ダウンロードパーセンテージを計算
-          const downpercentage = 100 * filenumber / NicoDownloader.TSURLs.length;
+          const downpercentage =
+            (100 * filenumber) / NicoDownloader.TSURLs.length;
           if (downpercentage > NicoDownloader.DownloadPercentageGet()) {
             NicoDownloader.DownloadPercentageSet(downpercentage);
           }
 
           //ダウンロード中のテキストを書き換え
-          let text_dl = NicoDownloader.LangText("ダウンロード中") + "…… (" + NicoDownloader.DownloadPercentageGet().toFixed(1) + "%)";
+          let text_dl =
+            NicoDownloader.LangText("ダウンロード中") +
+            "…… (" +
+            NicoDownloader.DownloadPercentageGet().toFixed(1) +
+            "%)";
 
           //ダウンロードエラー数がある場合はエラー発生の●を表示
           if (NicoDownloader.DownloadFaultNumCheck() != 0) {
@@ -234,15 +260,12 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
           //ボタンのテキストを書き換え
           NicoDownloader.ButtonTextWrite(text_dl);
 
-
           DebugPrint("180: " + core.FS.stat(filename));
 
           //最後のファイルの場合はresolve
           resolve(filename);
-        });
-
-
-
+        }
+      );
     });
 
     promises.push(promise);
@@ -252,34 +275,31 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
     }
   }
 
-
-
-
   //Transcodeする
 
-  await Promise.all(
-    promises
-  ).then(() => {
-
+  await Promise.all(promises).then(() => {
     //間違ってURLを読みに行くのでm3u8を3つ書き換える
     //m3u8末尾の3個
     const m3u8s_num = m3u8s.length / 2;
     for (let i = 0; i < m3u8s_num; i++) {
-      DebugPrint(m3u8s[m3u8s_num + i] + ' -> ' + new TextEncoder().encode(m3u8s[i]))
-      core.FS.writeFile(m3u8s[m3u8s_num + i], new TextEncoder().encode(m3u8s[i]));
+      DebugPrint(
+        m3u8s[m3u8s_num + i] + " -> " + new TextEncoder().encode(m3u8s[i])
+      );
+      core.FS.writeFile(
+        m3u8s[m3u8s_num + i],
+        new TextEncoder().encode(m3u8s[i])
+      );
     }
 
     const m3u8name = m3u8s[m3u8s.length - 1];
-    NicoDownloader.ButtonTextWrite('結合処理中');
-
+    NicoDownloader.ButtonTextWrite("結合処理中");
 
     Transcode(core, m3u8name, NicoDownloader, Nicovideo).then(() => {
-      NicoDownloader.VideoDownloadingReset();// ダウンロード中をリセット
+      NicoDownloader.VideoDownloadingReset(); // ダウンロード中をリセット
     });
   });
 
   return true;
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -291,14 +311,18 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
  */
 ////////////////////////////////////////////////////////////////////////
 async function Downloadblob(url, NicoDownloader) {
-
   //TSの取得
-  let res = await fetch_retry(url, NicoDownloader, { credentials: 'include' }, 100);
+  let res = await fetch_retry(
+    url,
+    NicoDownloader,
+    { credentials: "include" },
+    100
+  );
 
   let blob = res.blob();
   DebugPrint("BLOBgetEnd:" + url);
   return blob;
-};
+}
 
 ////////////////////////////////////////////////////////////////////////
 /**
@@ -311,7 +335,7 @@ async function Downloadblob(url, NicoDownloader) {
 async function DownloadUint8Array(url, NicoDownloader) {
   let blob = await Downloadblob(url, NicoDownloader);
   let byte = null;
-  await blob.arrayBuffer().then(data => {
+  await blob.arrayBuffer().then((data) => {
     byte = new Uint8Array(data);
   });
   return byte;
@@ -320,19 +344,42 @@ async function DownloadUint8Array(url, NicoDownloader) {
 ////////////////////////////////////////////////////////////////////////
 /**
  * 変換処理してファイルを返す
- * @param {Core} Core 
- * @param {String} m3u8name 
- * @param {NicoDownloaderClass} NicoDownloader 
- * @param {NicovideoClass} Nicovideo 
+ * @param {Core} Core
+ * @param {String} m3u8name
+ * @param {NicoDownloaderClass} NicoDownloader
+ * @param {NicovideoClass} Nicovideo
  * @returns {Object} file
  */
 ////////////////////////////////////////////////////////////////////////
 async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
-
   NicoDownloader.ButtonTextWrite("変換中");
-  const { file } = await runFFmpeg_m3u8(Core, m3u8name, NicoDownloader, Nicovideo);
+  const mode = await Option_setLoading("downFile_setting"); // モードを取得
+  console.log(`Current mode: ${mode}`); // モードを確認するログ
+  const file = await runFFmpeg_m3u8(
+    Core,
+    m3u8name,
+    NicoDownloader,
+    Nicovideo,
+    mode
+  );
   return file;
-};
+}
+
+function Option_setLoading(name) {
+
+  try {
+      chrome.storage.local.get(name, function (value) {
+          //chrome.storage.localから読み出し
+          localStorage.setItem(name, value[name]);
+      })
+      //return return_val;
+      return localStorage.getItem(name);
+
+  } catch (error) {
+      return 0;
+  }
+
+}
 
 ////////////////////////////////////////////////////////////////////////
 /**
@@ -346,7 +393,7 @@ async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
 ////////////////////////////////////////////////////////////////////////
 async function fetch_retry(url, NicoDownloader, options, n) {
   try {
-    DebugPrint('fetchurl: ' + url);
+    DebugPrint("fetchurl: " + url);
     let fetched = await fetch(url, options);
     if (fetched.status === 200) {
       return fetched;
@@ -363,7 +410,7 @@ async function fetch_retry(url, NicoDownloader, options, n) {
     if (n === 1) throw err;
     return await fetch_retry(url, NicoDownloader, options, n - 1);
   }
-};
+}
 
 ////////////////////////////////////////////////////////////////////////
 /**
@@ -377,5 +424,3 @@ function sleep(waitMsec) {
   // 指定ミリ秒間だけループさせる（CPUは常にビジー状態）
   while (new Date() - startMsec < waitMsec);
 }
-
-
