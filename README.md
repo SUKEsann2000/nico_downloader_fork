@@ -2,6 +2,10 @@
 
 nico downloader：ニコニコ用のシンプルなChrome拡張
 
+**Chrome Webストアで公開されています！**
+
+**https://chromewebstore.google.com/detail/nico-downloader/dncjcadpoakefjpnabimpalenliehbig**
+
 ---
 
 - [nico downloader](#nico-downloader)
