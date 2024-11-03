@@ -2,13 +2,14 @@
 LocalStorageで保存される値について
 
 キー                 デフォルト値               内容
-"newloading"               undefined        一度でも設定したことがあるか？
+"newloading"            undefined           一度でも設定したことがあるか？
 "video_downloading"     0                   デフォルト保存名設定
 "video_pattern"         sm[0-9]{1,}         反応するURL設定名
 "video_autosave"        0                   1だと自動で保存処理が走ります
 "video_hlssave"         0                   0だと初期設定、1だと低速、2だと高速モード
 "debug"                 0                   1だとデバッグ出力あり
 "language_setting"      ja                  言語設定
+"downFile_setting"      mp4                 保存ファイル形式（自作）
  */
 
 
@@ -76,6 +77,7 @@ function defalt_dataWrite() {
     Option_setWriting("debug", "0");
     Option_setWriting("video_hlssave", "0");
     Option_setWriting("language_setting", "ja");
+    Option_setWriting("downFile_setting","mp4"); //mp4として
     Options_Save();
 }
 
@@ -90,6 +92,7 @@ function Options_onload() {
         LoadOption("video_hlssave");
         LoadOption("debug");
         LoadOption("language_setting");
+        LoadOption("downFile_setting");
     } catch (error) {
         Default_click();
         Options_Save();

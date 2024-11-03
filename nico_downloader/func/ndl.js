@@ -804,9 +804,13 @@ class NicoDownloaderClass {
     CheckVideoFormat() {
         if (this.VideoFormat == null) return false;
         if (this.VideoFormat == '') return false;
+        /*const videoFormat = chrome.storage.local.get("downFile_setting", function (value) {
+            //chrome.storage.localから読み出し
+            localStorage.setItem("downFile_setting", value["downFile_setting"]);
+        });
+        */
         return this.VideoFormat;
     }
-
 
     ////////////////////////////////////////////////////////////////
     /**
@@ -881,6 +885,9 @@ class NicoDownloaderClass {
     FSOutputFileNameSet(Nicovideo) {
         this.FSOutputFileName = Nicovideo.video_sm + "." + this.CheckVideoFormat() || "mp4";
     }
+    OutputFileNameSet(Nicovideo,name) {
+        this.FSOutputFileName = name;
+    }
 
     ////////////////////////////////////////////////////////////////
     /**
@@ -901,8 +908,6 @@ class NicoDownloaderClass {
     FSOutputFileNameGet() {
         return this.FSOutputFileName;
     }
-
-
 }
 
 

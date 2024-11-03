@@ -16,6 +16,7 @@ window.onload = function () {
             Options_view_select("video_hlssave");
             Options_view_select("debug");
             Options_view_select("language_setting");
+            Options_view_select("downFile_setting");
         }
         save_flag = false;
     }, 10);
@@ -59,6 +60,7 @@ function Options_Save() {
     Option_setWritingByID("video_autosave");
     Option_setWritingByID("video_hlssave"); //
     Option_setWritingByID("language_setting");
+    Option_setWritingByID("downFile_setting");
 
 
     //保存日時
