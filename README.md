@@ -105,4 +105,4 @@ nico downloader：ニコニコ用のシンプルなChrome拡張
 | 5.0.0.10     | 2024.9.26  | 5.0.0.7へのロールバック                                      |
 | 5.0.0.11     | 2024.9.27  | シリーズが存在しない動画の場合途中で落ちる現象の修正、微修正 |
 | 5.0.0.13     | 2024.9.28  | 投稿者が存在しない動画への対処                               |
-| 5.0.1.0      | 2024.11.4 | aacに対応（https://github.com/masteralice3104/nico_downloader/pull/8）                                         |
+| 5.0.0.14      | 2024.11.4 | aacに対応（https://github.com/masteralice3104/nico_downloader/pull/8）                                         |
