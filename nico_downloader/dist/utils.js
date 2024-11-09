@@ -39,7 +39,7 @@ const runFFmpeg_m3u8 = async (
   m3u8name,
   NicoDownloader,
   Nicovideo,
-  mode = "mp4"
+  mode = "mp4"//デフォルトはmp4
 ) => {
   let resolve = null;
 
@@ -51,6 +51,7 @@ const runFFmpeg_m3u8 = async (
   //終了時にresolve
   try {
     //日本語が入っているとタグが変になるのでエンコード
+    //unescapeは非推奨だが見なかったことにする
     const title_str = unescape(encodeURIComponent(Nicovideo.video_title));
     const timestamp_str = unescape(
       encodeURIComponent(Nicovideo.video_registeredAt)
@@ -60,20 +61,19 @@ const runFFmpeg_m3u8 = async (
       encodeURIComponent(Nicovideo.video_description)
     );
 
+    // ジャンルとシリーズは日本語が入っているとエラーになるのでエンコード
+    //unescapeは非推奨だが見なかったことにする
     const genre_str = unescape(encodeURIComponent(Nicovideo.video_genre));
     const series_str = unescape(encodeURIComponent(Nicovideo.video_series));
 
-    NicoDownloader.FSOutputFileNameSet(Nicovideo);
-    let outputFileName = NicoDownloader.FSOutputFileNameGet();
+    //拡張子を設定
+    NicoDownloader.SetVideFormatByExtension(mode);
 
-    // ファイル名の拡張子をモードに基づき変更
-    if (mode === "aac" && outputFileName.endsWith(".mp4")) {
-      outputFileName = outputFileName.replace(/\.mp4$/, ".aac");
-    } else if (mode === "aac") {
-      outputFileName += ".aac"; // 拡張子がない場合に .aac を追加
-    }
-    NicoDownloader.OutputFileNameSet(Nicovideo,outputFileName);
-    DebugPrint(`Initial OutputFileNameSet: ${NicoDownloader.FSOutputFileNameGet()}`);
+    // 出力ファイル名を設定
+    NicoDownloader.FSOutputFileNameSet(Nicovideo);
+    const outputFileName = NicoDownloader.FSOutputFileNameGet();
+
+    DebugPrint(`OutputFileName: ${outputFileName}`);
 
     //ffmpeg実行
     ffmpeg(Core, [
@@ -90,7 +90,7 @@ const runFFmpeg_m3u8 = async (
       "-metadata",
       `date=${timestamp_str}`, // 登録日時
       "-metadata",
-      `artist=${username_str}`, // 投稿ユーザー
+      `artist=${username_str}`, // 投稿ユーザ
       "-metadata",
       `description=${description_str}`, // 説明
       "-metadata",
@@ -98,13 +98,13 @@ const runFFmpeg_m3u8 = async (
       "-metadata",
       `genre=${genre_str}`, // ジャンル
       "-metadata",
-      `publisher=nicovideo.jp`, // パブリッシャー
+      `publisher=nicovideo.jp`, // パブリッシャ
       "-metadata",
       `episode_id=${Nicovideo.video_sm}`, // 動画ID
       "-metadata",
       `album=${series_str}`, // シリーズ
       "-metadata",
-      `album_artist=${username_str}`, // 投稿ユーザー
+      `album_artist=${username_str}`, // 投稿ユーザ
       ...(mode === "aac"
         ? ["-vn", "-c:a", "copy"] // aacモードで最初のオーディオストリームを選択
         : ["-c", "copy"]), // MP4モードでオーディオ・ビデオをコピー
@@ -218,7 +218,7 @@ async function DownEncoder(NicoDownloader, m3u8s, Nicovideo) {
             console.error("Error:FaildedToBlob\n", e);
           }
         } else {
-          NicoDownloader.ButtonTextWrite("まもなく保存完了");
+          DebugPrint("Error:既に保存済み");
         }
       }
     },
@@ -368,15 +368,15 @@ async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
 function Option_setLoading(name) {
 
   try {
-      chrome.storage.local.get(name, function (value) {
-          //chrome.storage.localから読み出し
-          localStorage.setItem(name, value[name]);
-      })
-      //return return_val;
-      return localStorage.getItem(name);
+    chrome.storage.local.get(name, function (value) {
+      //chrome.storage.localから読み出し
+      localStorage.setItem(name, value[name]);
+    })
+    //return return_val;
+    return localStorage.getItem(name);
 
   } catch (error) {
-      return 0;
+    return 0;
   }
 
 }

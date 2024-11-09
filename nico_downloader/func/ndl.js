@@ -796,6 +796,18 @@ class NicoDownloaderClass {
 
     ////////////////////////////////////////////////////////////////////////
     /**
+     * VideoFormatに拡張子を直接セットする
+     * @param {String} extension 拡張子.mp4など
+     * @returns {Boolean}
+    */
+    ////////////////////////////////////////////////////////////////////////
+    SetVideFormatByExtension(extension) {
+        this.VideoFormat = extension;
+        return true;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    /**
      * VideoFormatをチェックする
      * @returns {String} VideoFormat VideoFormatがある場合
      * @returns {Boolean} false VideoFormatがない場合
@@ -804,11 +816,6 @@ class NicoDownloaderClass {
     CheckVideoFormat() {
         if (this.VideoFormat == null) return false;
         if (this.VideoFormat == '') return false;
-        /*const videoFormat = chrome.storage.local.get("downFile_setting", function (value) {
-            //chrome.storage.localから読み出し
-            localStorage.setItem("downFile_setting", value["downFile_setting"]);
-        });
-        */
         return this.VideoFormat;
     }
 
@@ -884,9 +891,6 @@ class NicoDownloaderClass {
     ////////////////////////////////////////////////////////////////
     FSOutputFileNameSet(Nicovideo) {
         this.FSOutputFileName = Nicovideo.video_sm + "." + this.CheckVideoFormat() || "mp4";
-    }
-    OutputFileNameSet(Nicovideo,name) {
-        this.FSOutputFileName = name;
     }
 
     ////////////////////////////////////////////////////////////////
