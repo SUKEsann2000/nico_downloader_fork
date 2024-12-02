@@ -368,16 +368,21 @@ async function Transcode(Core, m3u8name, NicoDownloader, Nicovideo) {
 }
 
 function Option_setLoading(name) {
-  return new Promise((resolve, reject) => {
-      chrome.storage.local.get(name, function (value) {
-          if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
-          } else {
-              resolve(value.downFile_setting);
-          }
-      });
-  });
+
+  try {
+    chrome.storage.local.get(name, function (value) {
+      //chrome.storage.localから読み出し
+      localStorage.setItem(name, value[name]);
+    })
+    //return return_val;
+    return localStorage.getItem(name);
+
+  } catch (error) {
+    return 0;
+  }
+
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 /**
